@@ -122,212 +122,114 @@ class _TravelIdBadgeState extends State<TravelIdBadge>
         child: SizedBox(
           width: totalPouchWidth,
           height: totalPouchHeight,
-          child: AnimatedBuilder(
-            animation: _flipAnimation,
-            builder: (context, child) {
-              final angle = _flipAnimation.value;
-              final normalized = (angle % (2 * math.pi));
-              final isFront = normalized <= (math.pi / 2) || normalized >= (3 * math.pi / 2);
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              // ====================================================
+              // 1. CLEAR PLASTIC VINYL SLEEVE / POUCH (OUTER CASING)
+              // ====================================================
+              Positioned.fill(
+                child: CustomPaint(
+                  painter: _PlasticSleevePainter(),
+                ),
+              ),
 
-              return Transform(
-                alignment: Alignment.center,
-                transform: Matrix4.identity()
-                  ..setEntry(3, 2, 0.0018) // Perspective tilt
-                  ..rotateY(angle),
-                child: isFront
-                    ? _buildFrontHolder(
-                        name: name,
-                        age: age,
-                        pace: pace,
-                        vibe: vibe,
-                        style: style,
-                        ig: ig,
-                        x: x,
-                        photo: photo,
-                        cardWidth: cardWidth,
-                        cardHeight: cardHeight,
-                        pouchHorizontalPadding: pouchHorizontalPadding,
-                        pouchTopExtension: pouchTopExtension,
-                      )
-                    : Transform(
-                        alignment: Alignment.center,
-                        transform: Matrix4.identity()..rotateY(math.pi),
-                        child: _buildBackHolder(
-                          cardWidth: cardWidth,
-                          cardHeight: cardHeight,
-                          pouchHorizontalPadding: pouchHorizontalPadding,
-                          pouchTopExtension: pouchTopExtension,
-                        ),
+              // ====================================================
+              // 2. TOP METALLIC LANYARD RING & HARDWARE CLIP
+              // ====================================================
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: SizedBox(
+                    width: 60,
+                    height: 48,
+                    child: CustomPaint(
+                      painter: _LanyardClipPainter(),
+                    ),
+                  ),
+                ),
+              ),
+
+              // ====================================================
+              // 3. FLIPPING BADGE CARD (INSIDE THE SLEEVE)
+              // ====================================================
+              Positioned(
+                top: pouchTopExtension,
+                left: pouchHorizontalPadding,
+                width: cardWidth,
+                height: cardHeight,
+                child: AnimatedBuilder(
+                  animation: _flipAnimation,
+                  builder: (context, child) {
+                    final angle = _flipAnimation.value;
+                    // Determine which face is visible
+                    final normalized = (angle % (2 * math.pi));
+                    final isFront = normalized <= (math.pi / 2) || normalized >= (3 * math.pi / 2);
+
+                    return Transform(
+                      alignment: Alignment.center,
+                      transform: Matrix4.identity()
+                        ..setEntry(3, 2, 0.0018) // Perspective tilt
+                        ..rotateY(angle),
+                      child: isFront
+                          ? _buildCardFront(
+                              name: name,
+                              age: age,
+                              pace: pace,
+                              vibe: vibe,
+                              style: style,
+                              ig: ig,
+                              x: x,
+                              photo: photo,
+                              width: cardWidth,
+                              height: cardHeight,
+                            )
+                          : Transform(
+                              alignment: Alignment.center,
+                              transform: Matrix4.identity()..rotateY(math.pi),
+                              child: _buildCardBack(
+                                width: cardWidth,
+                                height: cardHeight,
+                              ),
+                            ),
+                    );
+                  },
+                ),
+              ),
+
+              // ====================================================
+              // 4. VINYL GLOSS & LIGHT REFLECTION OVERLAY
+              // ====================================================
+              Positioned(
+                top: pouchTopExtension,
+                left: pouchHorizontalPadding,
+                width: cardWidth,
+                height: cardHeight,
+                child: IgnorePointer(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(4),
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Colors.white.withValues(alpha: 0.18),
+                          Colors.white.withValues(alpha: 0.04),
+                          Colors.transparent,
+                          Colors.white.withValues(alpha: 0.08),
+                        ],
+                        stops: const [0.0, 0.25, 0.6, 1.0],
                       ),
-              );
-            },
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
-    );
-  }
-
-  /// Front side of the entire card holder (sleeve + clip + front card + gloss)
-  Widget _buildFrontHolder({
-    required String name,
-    required String age,
-    required String pace,
-    required String vibe,
-    required String style,
-    required String ig,
-    required String x,
-    required String photo,
-    required double cardWidth,
-    required double cardHeight,
-    required double pouchHorizontalPadding,
-    required double pouchTopExtension,
-  }) {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        // 1. Clear vinyl pouch
-        Positioned.fill(
-          child: CustomPaint(
-            painter: _PlasticSleevePainter(),
-          ),
-        ),
-
-        // 2. Top metallic lanyard clip
-        Positioned(
-          top: 0,
-          left: 0,
-          right: 0,
-          child: Center(
-            child: SizedBox(
-              width: 60,
-              height: 48,
-              child: CustomPaint(
-                painter: _LanyardClipPainter(),
-              ),
-            ),
-          ),
-        ),
-
-        // 3. Card Front
-        Positioned(
-          top: pouchTopExtension,
-          left: pouchHorizontalPadding,
-          width: cardWidth,
-          height: cardHeight,
-          child: _buildCardFront(
-            name: name,
-            age: age,
-            pace: pace,
-            vibe: vibe,
-            style: style,
-            ig: ig,
-            x: x,
-            photo: photo,
-            width: cardWidth,
-            height: cardHeight,
-          ),
-        ),
-
-        // 4. Vinyl gloss overlay
-        Positioned(
-          top: pouchTopExtension,
-          left: pouchHorizontalPadding,
-          width: cardWidth,
-          height: cardHeight,
-          child: IgnorePointer(
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(4),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.white.withValues(alpha: 0.18),
-                    Colors.white.withValues(alpha: 0.04),
-                    Colors.transparent,
-                    Colors.white.withValues(alpha: 0.08),
-                  ],
-                  stops: const [0.0, 0.25, 0.6, 1.0],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// Back side of the entire card holder (sleeve + clip + back card with logo + gloss)
-  Widget _buildBackHolder({
-    required double cardWidth,
-    required double cardHeight,
-    required double pouchHorizontalPadding,
-    required double pouchTopExtension,
-  }) {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        // 1. Clear vinyl pouch (seen from back)
-        Positioned.fill(
-          child: CustomPaint(
-            painter: _PlasticSleevePainter(),
-          ),
-        ),
-
-        // 2. Top metallic lanyard clip (seen from back)
-        Positioned(
-          top: 0,
-          left: 0,
-          right: 0,
-          child: Center(
-            child: SizedBox(
-              width: 60,
-              height: 48,
-              child: CustomPaint(
-                painter: _LanyardClipPainter(),
-              ),
-            ),
-          ),
-        ),
-
-        // 3. Card Back with Logo Background
-        Positioned(
-          top: pouchTopExtension,
-          left: pouchHorizontalPadding,
-          width: cardWidth,
-          height: cardHeight,
-          child: _buildCardBack(
-            width: cardWidth,
-            height: cardHeight,
-          ),
-        ),
-
-        // 4. Vinyl gloss overlay on back
-        Positioned(
-          top: pouchTopExtension,
-          left: pouchHorizontalPadding,
-          width: cardWidth,
-          height: cardHeight,
-          child: IgnorePointer(
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(4),
-                gradient: LinearGradient(
-                  begin: Alignment.topRight,
-                  end: Alignment.bottomLeft,
-                  colors: [
-                    Colors.white.withValues(alpha: 0.18),
-                    Colors.white.withValues(alpha: 0.04),
-                    Colors.transparent,
-                    Colors.white.withValues(alpha: 0.08),
-                  ],
-                  stops: const [0.0, 0.25, 0.6, 1.0],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 
@@ -611,6 +513,9 @@ class _TravelIdBadgeState extends State<TravelIdBadge>
   // ==========================================================
   // CARD BACK: Branded Security Back for the 3D Flip
   // ==========================================================
+  // ==========================================================
+  // CARD BACK: Branded Security Back for the 3D Flip
+  // ==========================================================
   Widget _buildCardBack({
     required double width,
     required double height,
@@ -618,9 +523,9 @@ class _TravelIdBadgeState extends State<TravelIdBadge>
     return Container(
       width: width,
       height: height,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9F8F4), // Authentic warm cream cardstock
+        color: const Color(0xFFF1EFE9),
         borderRadius: BorderRadius.circular(4),
         boxShadow: [
           BoxShadow(
@@ -630,140 +535,67 @@ class _TravelIdBadgeState extends State<TravelIdBadge>
           ),
         ],
       ),
-      child: Stack(
-        fit: StackFit.expand,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Background watermark: Large logo with subtle 0.08 opacity filling background
-          Center(
-            child: Opacity(
-              opacity: 0.09,
-              child: Image.asset(
-                'assets/logo.png',
-                width: width * 0.78,
-                height: width * 0.78,
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) => const Icon(
-                  Icons.people_alt,
-                  size: 110,
-                  color: Color(0xFF0B2240),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: const Color(0xFF0B2240), width: 2),
+            ),
+            child: const Icon(
+              Icons.explore_rounded,
+              size: 40,
+              color: Color(0xFF0B2240),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'TRIPNEST ARCHIVE',
+            style: GoogleFonts.archivoBlack(
+              fontSize: 16,
+              color: const Color(0xFF0B2240),
+              letterSpacing: 1.2,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'OFFICIAL TRAVEL IDENTITY PASS',
+            style: GoogleFonts.spaceMono(
+              fontSize: 9,
+              fontWeight: FontWeight.w700,
+              color: Colors.grey.shade700,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Container(
+            height: 24,
+            width: 140,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(3),
+              border: Border.all(color: Colors.grey.shade400),
+            ),
+            child: Center(
+              child: Text(
+                '★ VERIFIED EXPLORER ★',
+                style: GoogleFonts.spaceMono(
+                  fontSize: 8.5,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF0B2240),
                 ),
               ),
             ),
           ),
-
-          // Card Back Content
-          Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Header
-              Column(
-                children: [
-                  Text(
-                    'TRIPNEST',
-                    style: GoogleFonts.archivoBlack(
-                      fontSize: 22,
-                      color: const Color(0xFF0B2240),
-                      letterSpacing: 2.0,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'OFFICIAL TRAVEL IDENTITY',
-                    style: GoogleFonts.spaceMono(
-                      fontSize: 8.5,
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFF444444),
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  CustomPaint(
-                    size: const Size(120, 2),
-                    painter: _DottedHLinePainter(),
-                  ),
-                ],
-              ),
-
-              // Centerpiece: Official Brand Logo Emblem
-              Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFF0B2240), width: 2.5),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                padding: const EdgeInsets.all(16),
-                child: Image.asset(
-                  'assets/logo.png',
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) => const Icon(
-                    Icons.people_alt,
-                    size: 55,
-                    color: Color(0xFF0B2240),
-                  ),
-                ),
-              ),
-
-              // Tagline & Verification Details
-              Column(
-                children: [
-                  Text(
-                    'Find Your Flock. Share the Journey.',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.caveat(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFF10141A),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF0B2240),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Text(
-                      '★ VERIFIED EXPLORER PASS ★',
-                      style: GoogleFonts.spaceMono(
-                        fontSize: 8.5,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
-                        letterSpacing: 0.8,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'TN-2026-ARCHIVE-45-12H',
-                    style: GoogleFonts.spaceMono(
-                      fontSize: 9.5,
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFF555555),
-                      letterSpacing: 1.0,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    'THE HOLDER OF THIS PASS IS AN OFFICIAL EXPLORER',
-                    style: GoogleFonts.spaceMono(
-                      fontSize: 6.5,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade600,
-                      letterSpacing: 0.2,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+          const SizedBox(height: 20),
+          Text(
+            'Tap badge anytime to inspect details',
+            style: GoogleFonts.caveat(
+              fontSize: 14,
+              color: Colors.grey.shade600,
+            ),
           ),
         ],
       ),

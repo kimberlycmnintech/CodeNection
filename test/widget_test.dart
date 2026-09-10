@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:wanderlog_clone/main.dart';
 import 'package:wanderlog_clone/models/models.dart';
+import 'package:wanderlog_clone/screens/home_shell.dart';
 import 'package:wanderlog_clone/screens/onboarding.dart';
 import 'package:wanderlog_clone/screens/profile_page.dart';
 import 'package:wanderlog_clone/widgets/boarding_pass_ticket.dart';
@@ -228,11 +229,12 @@ void main() {
     expect(find.text('Relaxed'), findsOneWidget);
     expect(find.text('Vibrant City'), findsOneWidget);
 
-    // Test tapping to flip the whole card holder to show the back with our logo
+    // Test tapping to flip the inside card
     await tester.tap(find.byType(TravelIdBadge));
-    await tester.pump(const Duration(milliseconds: 600));
-    expect(find.byType(Image), findsWidgets);
+    await tester.pump(const Duration(milliseconds: 200));
     await tester.pumpAndSettle();
+    expect(find.text('THE'), findsOneWidget);
+    expect(find.text('EXPLORER'), findsOneWidget);
 
     // Tap Enter TripNest
     await tester.ensureVisible(find.text('Enter TripNest'));
@@ -340,5 +342,60 @@ void main() {
     expect(social.myProfile.age, 24);
     expect(social.myProfile.instagram, '@harshall_travels');
     expect(social.myProfile.xHandle, '@harshall_x');
+  });
+
+  testWidgets('HomeShell renders 5 tabs (Home, Itinerary, Pairing, Chat, Profile) with outstanding middle Pairing button', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1200, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final social = SocialData();
+    social.myProfile.name = 'Alex Morgan';
+    social.myProfile.age = 25;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: HomeShell(data: social),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify all 5 tab labels exist
+    expect(find.text('Home'), findsOneWidget);
+    expect(find.text('Itinerary'), findsOneWidget);
+    expect(find.text('Pairing'), findsOneWidget);
+    expect(find.text('Chat'), findsOneWidget);
+    expect(find.text('Profile'), findsOneWidget);
+
+    // Initial tab is Home
+    expect(find.text('TripNest'), findsOneWidget);
+    expect(find.text('Continue planning'), findsOneWidget);
+
+    // Switch to Itinerary tab
+    await tester.tap(find.text('Itinerary'));
+    await tester.pumpAndSettle();
+    expect(find.text('Trip Itinerary'), findsOneWidget);
+
+    // Switch to outstanding center Pairing tab
+    await tester.tap(find.text('Pairing'));
+    await tester.pumpAndSettle();
+    expect(find.text('Travel Pairing'), findsOneWidget);
+    expect(find.text('YOUR TRAVEL DNA'), findsOneWidget);
+
+    // Switch to Chat tab
+    await tester.tap(find.text('Chat'));
+    await tester.pumpAndSettle();
+    expect(find.text('Trip Chat & Shared Notebook'), findsOneWidget);
+
+    // Switch to Profile tab
+    await tester.tap(find.text('Profile'));
+    await tester.pumpAndSettle();
+    expect(find.byType(TravelIdBadge), findsOneWidget);
+
+    // Return to Home tab
+    await tester.tap(find.text('Home'));
+    await tester.pumpAndSettle();
+    expect(find.text('Continue planning'), findsOneWidget);
   });
 }
