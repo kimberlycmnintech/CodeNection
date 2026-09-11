@@ -130,9 +130,9 @@ class _HomeShellState extends State<HomeShell> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildFloatingTab(0, Icons.home_rounded, 'Explore'),
-                  _buildFloatingTab(1, Icons.calendar_today_rounded, 'Trips'),
-                  _buildFloatingTab(2, Icons.swap_horiz_rounded, 'Pair'),
+                  _buildFloatingTab(0, Icons.home_rounded, 'Home'),
+                  _buildFloatingTab(1, Icons.calendar_today_rounded, 'Itinerary'),
+                  _buildFloatingTab(2, Icons.swap_horiz_rounded, 'Pairing'),
                   _buildFloatingTab(3, Icons.chat_bubble_rounded, 'Chat'),
                   _buildFloatingTab(4, Icons.person_rounded, 'Profile'),
                 ],
@@ -153,8 +153,8 @@ class _HomeShellState extends State<HomeShell> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 220),
         padding: isSelected
-            ? const EdgeInsets.symmetric(horizontal: 16, vertical: 10)
-            : const EdgeInsets.all(10),
+            ? const EdgeInsets.symmetric(horizontal: 14, vertical: 8)
+            : const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: isSelected ? darkSlate : Colors.transparent,
           borderRadius: BorderRadius.circular(28),
@@ -176,13 +176,17 @@ class _HomeShellState extends State<HomeShell> {
               color: isSelected ? Colors.white : darkSlate.withValues(alpha: 0.75),
               size: 20,
             ),
-            if (isSelected) ...[
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: boldItalicTitle(12, color: Colors.white),
-              ),
-            ],
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: isSelected
+                  ? boldItalicTitle(12, color: Colors.white)
+                  : TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: darkSlate.withValues(alpha: 0.75),
+                    ),
+            ),
           ],
         ),
       ),

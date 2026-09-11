@@ -146,7 +146,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               Row(
                 children: [
-                  if (profile.verified)
+                  if (isComplete)
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
@@ -157,10 +157,10 @@ class _ProfilePageState extends State<ProfilePage> {
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.verified, size: 14, color: Color(0xFF10B981)),
+                          Icon(Icons.check_circle_outline, size: 14, color: Color(0xFF10B981)),
                           SizedBox(width: 4),
                           Text(
-                            'ID VERIFIED',
+                            'ISSUED & ACTIVE',
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
@@ -182,10 +182,10 @@ class _ProfilePageState extends State<ProfilePage> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.shield_outlined, size: 14, color: Colors.orange.shade800),
+                          Icon(Icons.pending_outlined, size: 14, color: Colors.orange.shade800),
                           const SizedBox(width: 4),
                           Text(
-                            'UNVERIFIED ID',
+                            'PENDING DETAILS',
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
