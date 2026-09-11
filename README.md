@@ -297,270 +297,192 @@ Every existing travel app treats **finding a companion** and **planning a trip**
 | Gamification / retention loop | ✅ TripCoins | ❌ | ❌ | ❌ |
 
 ---
-
 ## 5. Technical Architecture & Feasibility
 
-### Tech Stack
+TripNest is an **AI-assisted travel companion matching and group trip planning platform.**
+The technology in this section supports one core journey:
+**Find the right person → determine compatibility → establish trust → communicate → align preferences → plan the trip together.**
+
+---
+
+### 5.1 Tech Stack
 
 #### Frontend
 
-| Technology | Why chosen | Constraints & mitigations |
+| Technology | Why we chose it | Expected constraints |
 |---|---|---|
-| **Flutter (Dart)** | Single codebase for both iOS and Android; rich animation and gesture APIs; fast UI iteration cycle; already has a working prototype | Dart ecosystem is narrower than React Native — mitigated by Flutter's comprehensive pub.dev package library and our team's existing familiarity |
-| **State Management: Riverpod** | Reactive, compile-safe state management that scales from prototype to production; handles async streams from Firestore and the backend cleanly | Minor learning curve; well-documented with strong community support |
-| **Google Fonts (`plus_jakarta_sans`)** | Runtime loading via `google_fonts` package; no asset bundling required | Requires internet on first launch; fonts are cached after first run |
+| **Flutter** | Single codebase for both iOS and Android. Reduces team size needed and development time significantly — critical for a 4-person, 2-week sprint. Rich widget ecosystem for building polished mobile UI without duplication. | Platform-specific permission dialogs (camera, storage) need testing on real devices. Hot reload speeds up iteration but complex state bugs can still be slow to debug. |
+| **Riverpod** | Compile-safe, testable state management. Avoids the boilerplate of BLoC while being more robust than basic `setState` for multi-screen reactive state (user profile, match state, trip data). | Learning curve for developers unfamiliar with Riverpod's provider graph. |
+| **Google Fonts** | Free, fast CDN-hosted fonts that give the app a professional, branded feel without any licensing concerns. | Requires internet on first load to cache; fallback to system fonts needed for offline use. |
 
 ---
 
 #### Backend
-
 > **Note:** The current prototype is frontend-only. The backend described here is the production architecture we plan to build during the building phase.
 
-| Technology | Why chosen | Constraints & mitigations |
+| Technology | Why we chose it | Expected constraints |
 |---|---|---|
-| **Python FastAPI** | Python is the natural choice given the heavy ML workload (Ollama, LangChain, embeddings). FastAPI is async, fast, and auto-generates API docs — useful for our team to coordinate frontend and backend work | Requires containerisation (Docker) to deploy consistently — mitigated by Cloud Run's container-native model |
-| **Cloud Run (Google Cloud)** | Serverless container hosting — scales to zero when idle (no cost), scales up automatically under load. Natively verifies Firebase Auth tokens per request | Cold start latency (~1–2 s after idle) — mitigated by keeping a minimum one instance warm during the demo |
-| **Firebase Auth (server-side token verification)** | Flutter sends the Firebase ID token with every API call; FastAPI verifies it using the Firebase Admin SDK — no separate auth stack needed on the backend | Straightforward to set up; Firebase Admin SDK is well-maintained in Python |
+| **FastAPI (Python)** | Lightweight, async-capable Python web framework with automatic OpenAPI docs. Python is the natural language for AI/ML libraries (LangChain, ChromaDB client). Allows us to co-locate matching logic and AI orchestration in one service. | Requires a capable machine for the hackathon demo since Ollama runs locally alongside it. Not auto-scaling out of the box without Cloud Run. |
+| **Firebase Auth** | Zero-backend-work authentication with email/password and social sign-in. SDKs for both Flutter and Python admin. Security rules are declarative and quick to configure. | Free Spark plan has limits on concurrent connections and storage. We may hit Firestore read/write quotas during heavy demo traffic. Auth tokens must be validated server-side in FastAPI, adding a verification step to every AI API call. |
+| **Ollama (local)** |  Local LLM runtime for self-hosted open-source models — no per-token API cost; memory data stays on our own infrastructure (privacy-first). | Requires 8 GB+ VRAM for comfortable inference; for the hackathon demo, run on a team laptop or Google Colab with GPU |
 
 ---
 
 #### Database & Storage
 
-| Technology | Why chosen | Constraints & mitigations |
+| Technology | Why we chose it | Expected constraints |
 |---|---|---|
-| **Cloud Firestore** | Real-time listeners suit the group chat; offline persistence works on mobile out-of-the-box; flexible NoSQL schema suits evolving trip and profile models | Per-read/write pricing at scale — mitigated by Firestore caching, batched writes, and security rules that prevent over-fetching |
-| **Firebase Storage** | Profile photos, ID verification uploads, and journal images stored as authenticated blobs tightly coupled to Firebase Auth | Free tier: 5 GB storage / 1 GB download per day — more than sufficient for the hackathon demo |
-| **ChromaDB (Vector Store)** | Open-source, lightweight, runs embedded within the FastAPI service — used for two distinct purposes: *(1)* storing User Memory embeddings for the matching engine, *(2)* caching chunked travel web content for the RAG pipeline | Persistence requires a mounted volume on Cloud Run — mitigated by using Cloud Storage as ChromaDB's persistent backend |
+| **Firestore** | Real-time document database with offline support. Native Flutter SDK. Handles user profiles, trips, group chat, itinerary, and notebook data without a dedicated backend CRUD layer — saving development time. | Firestore's document model requires careful data modelling to avoid expensive reads (e.g. fetching all users for matching). We will use server-side filtering and indexed queries. Free Spark plan limits: 50k reads/day, 20k writes/day — sufficient for a hackathon demo. |
+| **Firebase Storage** | Simple, rules-secured file storage for profile photos and TravelID prototype image uploads. Integrates directly with Firebase Auth for per-user access rules. | Free plan: 5 GB storage, 1 GB/day download. Sufficient for demo scale. |
+| **ChromaDB (local)** | Zero-configuration open-source vector database. Runs as a local process alongside FastAPI. Used to store and retrieve User Memory embeddings for the matching engine. | ChromaDB running inside a container or co-located on ephemeral infrastructure (e.g. Cloud Run) is **not suitable for production** — data would be lost on container restart. For the hackathon, persistence is on the team workstation's local filesystem. A managed or self-hosted persistent vector database would be required for production. |
 
 ---
 
 #### AI & Machine Learning
 
-| Technology | Role | Why chosen | Constraints & mitigations |
-|---|---|---|---|
-| **Ollama + Llama 3 8B (Local LLM)** | Matching engine reasoning & Memories embedding | Self-hosted open-source LLM — no per-token API cost; user Memory data stays on our own infrastructure (privacy-first). Llama 3 8B is strong at instruction-following and produces high-quality embeddings | Requires 8 GB+ VRAM for comfortable inference; for the hackathon demo, run on a team laptop or Google Colab with GPU |
-| **User Memories Feature** | Personal travel context store | Users write freeform memories — past travel experiences, preferences, dislikes (*"I hate crowded tourist attractions"*, *"I always need a rest day after a long flight"*). Each memory is embedded via Ollama and stored in ChromaDB under the user's ID. At match time, the local LLM retrieves the top-k memories for both users and reasons about their compatibility in natural language — then adjusts the final compatibility score accordingly | Embedding quality is strong for English text in v1; multilingual embedding support is deferred to v2 |
-| **Google Gemini 3.5 Flash** | AI Itinerary Assistant | Large 1M-token context window holds the full group Notebook and itinerary; strong instruction-following; free tier available; multimodal capability for future place photo analysis | Free tier: 15 RPM — sufficient for demo; API key must be kept server-side (proxied through FastAPI, never exposed to the client) |
-| **RAG Pipeline — LangChain + BeautifulSoup + ChromaDB** | Grounds Gemini suggestions in real travel web content | When the AI Assistant generates a suggestion for a specific place, the pipeline: *(1)* scrapes the relevant page from TripAdvisor, the local tourism board, or Google Maps, *(2)* chunks the text into 512-token segments, *(3)* embeds and stores in ChromaDB, *(4)* retrieves the top-k most relevant chunks, *(5)* injects them into the Gemini prompt alongside the group's Notebook. Suggestions are grounded in up-to-date real-world information, not just Gemini's training data | Web scraping is subject to `robots.txt` and rate limits — mitigated by: respecting crawl-delay headers; caching content per place in ChromaDB (re-scrape only when stale > 7 days); falling back to Places API data if a site blocks scraping |
-| **LangChain** | AI orchestration framework | Manages document loading, chunking, embedding, retrieval, and prompt assembly for both the Ollama chain and the Gemini chain | Well-maintained, widely used; adds one dependency layer — acceptable given the complexity it abstracts |
+| Technology | Why we chose it | Expected constraints |
+|---|---|---|
+| **`nomic-embed-text` via Ollama** | Dedicated, lightweight embedding model for converting User Memory text into vector representations. Embedding is a separate responsibility from reasoning — we deliberately do not use Llama 3 8B for this task. Runs locally via Ollama at zero cost. | Embedding quality depends on model size; `nomic-embed-text` is a strong general-purpose choice but may not capture highly domain-specific travel nuances. |
+| **Llama 3 8B via Ollama** | Open-source reasoning model used exclusively for **natural-language compatibility reasoning** — reading retrieved memories and generating a qualitative explanation of why two travellers are or are not compatible. Local inference preserves user privacy during the prototype stage. | 8B parameter model inference on CPU can be slow (10–30 seconds per request). A GPU-equipped workstation significantly improves this. We will cache compatibility results in Firestore to avoid repeated inference for the same pair. |
+| **Google Gemini Flash** | Capable cloud LLM used for **AI itinerary generation**. Trip planning is an open-ended generative task well-suited to a large cloud model. Gemini Flash offers a free-tier API that is sufficient for hackathon usage. | Subject to API rate limits and daily quotas (varies by model version). The exact Gemini Flash model version is selected based on what is available and within quota at implementation time — we do not hard-code a specific version as an architectural dependency. Context window limits mean we must carefully curate what group context we pass to the prompt. |
+| **LangChain (selective use)** | Used only where it genuinely simplifies orchestration — specifically for the ChromaDB retrieval chain and prompt templating in the matching service. We do not use it as a blanket abstraction layer. | Adds a dependency and can obscure behaviour if overused. We keep LangChain usage minimal and explicit. |
 
 ---
 
 #### External APIs & Services
 
-| Service | Purpose | Constraints |
+| Technology | Why we chose it | Expected constraints |
 |---|---|---|
-| **Google Maps Flutter SDK** | Embedded interactive map in the itinerary view with itinerary pins | Requires a billing-enabled project even on the free tier; implement a daily quota guard |
-| **Google Places API** | POI data (name, rating, address, photos, opening hours) for itinerary stops; also used as a RAG fallback when web scraping is blocked | $200/month credit — well within hackathon usage |
-| **Firebase Auth** | Email + Google Sign-In; ID token issued to Flutter and verified by FastAPI on every API request | Phone-number auth excluded from v1 to avoid SMS costs |
+| **Google Maps SDK (Flutter)** | Native Flutter plugin for interactive map display and route visualisation on the trip itinerary screen. | Requires a Maps API key with billing enabled. Free monthly credit ($200) is more than sufficient for hackathon usage, but billing must be set up. Platform-specific API key configuration needed for Android and iOS. |
+| **Google Places API** | Provides structured, permitted access to place data — name, address, rating, opening hours, photos, and coordinates. This is our primary source of real-world place information for itinerary suggestions. Replaces any dependency on web scraping. | Pay-per-use after free credit. Calls must be minimised with caching (Firestore) to avoid unexpected costs. Results are limited to what the Places API returns — we do not claim real-time web information beyond this. |
 
 ---
 
-### System Architecture
-
-```mermaid
-flowchart TD
-    subgraph App["Flutter Mobile App"]
-        A1["Matching Module"]
-        A2["Trip Planning & Itinerary"]
-        A3["Chat & Notebook"]
-        A4["Profile & Memories"]
-    end
-
-    subgraph FB["Firebase Layer"]
-        F1["Firebase Auth\n(Identity & Verification)"]
-        F2["Cloud Firestore\n(Users · Trips · Chat · Notebooks)"]
-        F3["Firebase Storage\n(Photos · ID Docs)"]
-    end
-
-    subgraph BE["Backend — Python FastAPI on Cloud Run"]
-        B1["Matching Engine\n(Compatibility Score + LLM Reasoning)"]
-        B2["AI Itinerary Assistant\n(Gemini + RAG)"]
-        B3["Memories Service\n(Embed & Store User Memories)"]
-    end
-
-    subgraph LLM["Local LLM Server"]
-        L1["Ollama — Llama 3 8B\n(Inference & Embeddings)"]
-        L2["ChromaDB\n(User Memory Vectors)"]
-        L1 <-->|"embed & query"| L2
-    end
-
-    subgraph RAG["RAG Pipeline — LangChain"]
-        R1["Web Scraper\n(BeautifulSoup)"]
-        R2["ChromaDB\n(Travel Content Vectors)"]
-        R3["Google Gemini 3.5 Flash"]
-        R1 -->|"chunk & embed"| R2
-        R2 -->|"top-k retrieval"| R3
-    end
-
-    subgraph Ext["External APIs"]
-        E1["Google Maps SDK"]
-        E2["Places API"]
-        E3["Travel Websites\n(TripAdvisor · Tourism Boards)"]
-    end
-
-    App -->|"Firebase SDK (real-time)"| FB
-    App -->|"REST + Firebase ID Token"| BE
-    B1 <-->|"LLM inference + memory retrieval"| LLM
-    B2 -->|"RAG query + Notebook context"| RAG
-    B3 -->|"embed new memories"| LLM
-    R1 -->|"HTTP scrape"| E3
-    App -->|"map rendering"| E1
-    App -->|"place data"| E2
-    BE -->|"POI fallback"| E2
-```
-
-> Two separate AI pipelines run in parallel. The **Local LLM pipeline** (Ollama + ChromaDB) handles matching and Memories — sensitive user data never leaves our own server. The **Gemini + RAG pipeline** handles the AI Itinerary Assistant, grounding every suggestion in live web content rather than model training data alone.
-
----
-
-### How the Two AI Systems Work
-
-#### 🧠 System 1: Local LLM + Memories → Smarter Matching
+### 5.2 System Architecture Diagram
 
 ```
-User writes a Memory (freeform text):
-  "I hate starting the day before 10 AM and always skip museums"
-              │
-              ▼
-  Memories Service (FastAPI)
-    → Embed text with Ollama embedding model
-    → Store embedding in ChromaDB (keyed to user ID)
-              │
-              ▼
-  At Match Time (two users compared):
-    → Retrieve top-k memories for User A
-    → Retrieve top-k memories for User B
-    → Prompt Llama 3:
-        "User A memories: [...]
-         User B memories: [...]
-         Evaluate their compatibility as travel companions.
-         Focus on pace, schedule preferences, and travel interests.
-         Return a reasoning paragraph and a score adjustment (-10 to +10)."
-    → Local LLM returns structured reasoning + score delta
-    → Final Compatibility % = Numeric Travel DNA score + LLM adjustment
-```
-
-The more memories a user adds, the more personalised and accurate their match becomes — creating a meaningful incentive to engage with the feature over time.
-
----
-
-#### ✨ System 2: Gemini + RAG → Grounded AI Itinerary Suggestions
-
-```
-User opens AI Assistant; asks about an itinerary stop
-  e.g. "Is Senso-ji better on Day 1 or Day 3?"
-              │
-              ▼
-  RAG Pipeline:
-    → Check ChromaDB: cached content for "Senso-ji Temple"? (< 7 days)
-    → If stale / missing:
-        Scrape TripAdvisor page + Tokyo tourism board listing
-        → chunk into 512-token segments
-        → embed → store in ChromaDB
-    → Retrieve top-5 most relevant chunks
-              │
-              ▼
-  Gemini 3.5 Flash prompt:
-    "REAL-WORLD CONTEXT (from web):
-      [top-5 RAG chunks about Senso-ji — opening times, crowd patterns, tips]
-     GROUP NOTEBOOK (from Firestore):
-      [decisions: 'no early mornings', 'hotel budget ≤ RM250/night']
-     CURRENT ITINERARY:
-      [Day 1: Akihabara → Ueno | Day 3: Asakusa → Harajuku]
-     QUESTION: Given the above context and our group preferences,
-               which day is better for Senso-ji and why?"
-              │
-              ▼
-  Gemini returns → Grounded, contextual suggestion card rendered in the app
+┌─────────────────────────────────────────────────────────┐
+│                  Flutter Mobile App                     │
+│  Matching │ Travel DNA │ Memories │ Profile / TravelID  │
+│  Group Chat │ Shared Notebook │ Trip Itinerary          │
+└────────────────────────┬────────────────────────────────┘
+                         │
+          ┌──────────────┴──────────────┐
+          │                             │
+          ▼                             ▼
+┌─────────────────────┐     ┌──────────────────────────────────┐
+│  Firebase (Cloud)   │     │  FastAPI Backend                 │
+│                     │     │  [Hackathon: team workstation]   │
+│  Auth               │     │                                  │
+│  Firestore          │     │  ┌───────────────────────────┐   │
+│  Storage            │     │  │     Matching Service      │   │
+└─────────────────────┘     │  │                           │   │
+                            │  │  Travel DNA Score         │   │
+                            │  │  (deterministic formula)  │   │
+                            │  │         ↓                 │   │
+                            │  │  nomic-embed-text (Ollama)│   │
+                            │  │  → User Memory embeddings │   │
+                            │  │         ↓                 │   │
+                            │  │  ChromaDB (local)         │   │
+                            │  │  → retrieve top-k memories│   │
+                            │  │         ↓                 │   │
+                            │  │  Llama 3 8B (Ollama)      │   │
+                            │  │  → compatibility reasoning│   │
+                            │  │  → score + explanation    │   │
+                            │  └───────────────────────────┘   │
+                            │                                  │
+                            │  ┌───────────────────────────┐   │
+                            │  │   AI Planning Service     │   │
+                            │  │                           │   │
+                            │  │  Group Preferences        │   │
+                            │  │  + Shared Notebook        │   │
+                            │  │  + Current Itinerary      │   │
+                            │  │  + Google Places API data │   │
+                            │  │         ↓                 │   │
+                            │  │  Google Gemini Flash      │   │
+                            │  │  → AI itinerary output    │   │
+                            │  │         ↓                 │   │
+                            │  │  Google Maps (display)    │   │
+                            │  └───────────────────────────┘   │
+                            └──────────────────────────────────┘
 ```
 
 ---
 
-### Resource & Time Awareness
+### 5.3 How the Two AI Systems Work
 
-**Team composition:** 4 members — 2 Flutter developers, 1 backend/ML engineer (FastAPI + LLM + RAG), 1 designer and full-stack support.
+We use two separate AI systems because they solve fundamentally different problems.
 
-**Cost estimate (hackathon phase — all free tiers or existing hardware):**
+**System 1 — Local Matching AI** answers: *"Are these two people compatible travel partners?"*
 
-| Service | Free tier / Credit | Expected hackathon usage |
+The compatibility score is **not** generated arbitrarily by the LLM. It uses a two-layer design:
+
+1. **Travel DNA base score (deterministic):** A weighted formula applied to both users' quiz answers across five dimensions — budget, travel pace, schedule flexibility, preferred activities, and food/lifestyle. This produces a numerical base score (e.g. 84%).
+
+2. **Memory adjustment (LLM-assisted):** User Memory notes are embedded via `nomic-embed-text` and stored in ChromaDB. When matching, relevant memories for both users are retrieved and passed to Llama 3 8B, which reasons about semantic compatibility and may apply a small adjustment (e.g. −5%) along with a plain-language explanation.
+
+**Final score = Travel DNA base ± memory adjustment** (e.g. 84% − 5% = **79% compatible**)
+
+The LLM explains *why* — it does not invent the percentage.
+
+---
+
+**System 2 — AI Trip Planning (Gemini)** answers: *"What should this group do on their trip?"*
+
+Group context (preferences, notebook entries, current itinerary, and Places API data) is assembled and sent to Google Gemini Flash, which generates itinerary suggestions grounded in what the group actually wants. No web scraping is involved — structured Places API data is the real-world information source.
+
+---
+
+### 5.4 Build Plan & Scope
+
+We are a **4-person team building over approximately 2 weeks.** The scope below is deliberately narrow. A reviewer should be able to see a live, working demo of this entire journey: **FIND → VERIFY → MATCH → CONNECT → ALIGN → PLAN.**
+
+#### What We Are Building (In Scope)
+
+| # | Feature | Description |
 |---|---|---|
-| Firebase Auth | 10,000 verifications/month | Well within |
-| Cloud Firestore | 50,000 reads / 20,000 writes / day | Well within for demo |
-| Firebase Storage | 5 GB / 1 GB download/day | Well within |
-| Cloud Run | 2M requests/month free; 360,000 vCPU-seconds | Well within for demo |
-| Gemini 3.5 Flash | 15 RPM / 1M tokens/min (free tier) | Sufficient for demo |
-| Google Maps + Places API | $200/month free credit | Sufficient for demo |
-| Ollama + Llama 3 8B | Self-hosted on team laptop or Google Colab | **$0 — hardware we already have** |
-| ChromaDB | Open-source, embedded | **$0** |
-| **Total** | | **$0 — fully within free tiers** |
+| 1 | **Auth & Onboarding** | Firebase email/social sign-in, onboarding flow |
+| 2 | **User Profile** | Photo, bio, travel style tags |
+| 3 | **Travel DNA Quiz** | Structured quiz → deterministic compatibility base score |
+| 4 | **User Memories** | Free-text input → embedded via `nomic-embed-text` → ChromaDB |
+| 5 | **Matching Engine** | Travel DNA score + Llama reasoning layer → match result screen |
+| 6 | **Compatibility Explanation** | Natural-language output from Llama 3 8B explaining the match |
+| 7 | **Prototype TravelID Verification** | Image upload → Firestore verification state → "TravelID Verified" badge on profile *(no OCR or KYC — prototype flow only)* |
+| 8 | **Group Chat** | Firestore-backed real-time messaging between matched travellers |
+| 9 | **Group Preference & Harmony** | Shared preference voting → alignment view for the group |
+| 10 | **Shared Notebook** | Group pinboard for trip ideas and notes |
+| 11 | **Gemini Itinerary Assistant** | AI-generated itinerary suggestions from group context + Places API |
+| 12 | **Google Maps Integration** | Map display of itinerary locations and routes |
+| 13 | **Google Places API** | Structured place data powering itinerary suggestions |
 
-**Sprint plan (building phase — 2 weeks):**
+#### What We Are Not Building (Out of Scope)
 
-| Sprint | Days | Deliverables |
+The following were deliberately dropped from TripNest's core scope. They are not a future afterthought — they are intentional cuts to keep the build feasible and the product focused.
+
+| Out of Scope | Reason |
+|---|---|
+| Production KYC / real identity verification | Requires a dedicated KYC provider (e.g. Stripe Identity), compliance review, and is out of scope for a prototype |
+| Web scraping (TripAdvisor, Google Maps) | Scraping-dependent architecture is brittle and legally complex; replaced by Google Places API |
+| Direct flight / hotel booking | Third-party booking API integration complexity |
+| AI expense / receipt splitting | Dropped from core product scope |
+| Social travel journal | Dropped from core product scope |
+| Gamification (TripCoins) | Dropped from core product scope |
+| AR destination preview | Hardware complexity |
+| In-app video calls | WebRTC / SDK complexity |
+| Real-time collaborative editing | Conflict resolution and sync complexity |
+| Social media link/inspiration extraction | Scraping risk and out of core scope |
+
+#### 2-Week Sprint Breakdown
+
+| Days | Focus | Milestone |
 |---|---|---|
-| 0 — Infrastructure | 1 | Firebase project, Firestore rules, Cloud Run + Docker setup, FastAPI skeleton with Auth middleware |
-| 1 — Auth & Profile | 1 | Firebase Auth (email + Google), user profile CRUD, TravelID badge display |
-| 2 — Travel DNA & Memories | 2 | 5-topic swipe onboarding; Memories text input UI; Ollama embedding pipeline; ChromaDB storage |
-| 3 — Matching Engine | 2 | Numeric Travel DNA score; Local LLM semantic reasoning from Memories; match list screen; ID verification upload flow |
-| 4 — Trip Workspace | 2 | Trip folder CRUD, day-by-day stops (Firestore-backed), Google Maps embed, calendar view |
-| 5 — Chat + Notebook | 2 | Real-time Firestore chat; message category tagging; drag-to-Notebook; Group Preference & Harmony view |
-| 6 — AI Itinerary Assistant | 2 | RAG pipeline (BeautifulSoup scraper → ChromaDB); Gemini 3.5 Flash integration; Notebook context injection; suggestion cards |
-| 7 — Polish & Demo Prep | 2 | Social inspiration link extractor (AI extracts places from shared URLs); end-to-end UI polish; loading/error states; demo script |
+| **Day 1** | Infrastructure | Firebase project, Firestore rules, FastAPI scaffold, Ollama + ChromaDB running locally and confirmed |
+| **Days 2–3** | Auth + Profile + Travel DNA | Sign-in flow, profile screen, Travel DNA quiz, deterministic scoring formula |
+| **Days 4–5** | User Memories + Embeddings | Memory input UI, `nomic-embed-text` pipeline, ChromaDB storage and retrieval verified |
+| **Days 6–7** | Matching Engine | Full compatibility score flow, Llama reasoning, match result screen with explanation |
+| **Days 8–9** | Trip Workspace | Shared Notebook, Group Chat (Firestore real-time) |
+| **Days 10–11** | Harmony + Itinerary AI | Group preference voting, Harmony view, Gemini itinerary assistant endpoint |
+| **Day 12** | Maps + Places | Google Maps display, Places API integration feeding itinerary suggestions |
+| **Days 13–14** | Integration + Polish + Demo | End-to-end testing, prototype TravelID flow, UI polish, demo script |
 
----
-
-### Build Plan — In-Scope vs. Out-of-Scope
-
-**✅ In scope (building phase):**
-- Firebase Auth (email + Google Sign-In)
-- Firestore-backed user profiles, trips, chat, and notebooks
-- 5-topic swipe Travel DNA onboarding quiz
-- **Memories feature:** freeform text input → Ollama embedding → ChromaDB storage per user
-- Buddy matching: numeric Travel DNA compatibility score + Local LLM semantic reasoning layer from Memories
-- ID verification upload flow (photo → Firestore status flag; UI flow only in v1, no live OCR)
-- TravelID badge display
-- Trip folder workspace: create, edit, status tracking (Upcoming / Ongoing / Completed)
-- Day-by-day itinerary with place stops
-- Google Maps embedded view with itinerary pins and walking estimates
-- Real-time group chat per trip (Firestore listeners)
-- Message category tagging + drag-to-Notebook
-- **AI Itinerary Assistant:** RAG pipeline (web scraper → ChromaDB) + Gemini 1.5 Flash, with group Notebook injected as context
-- Group Preference & Harmony: surfaces budget, pace, and style conflicts before itinerary generation
-- Social inspiration: AI extracts place names from shared links (TripAdvisor, Instagram, etc.) and adds them to the trip folder
-- Price comparison cards for flights and hotels (links to external providers — no direct booking)
-
-**❌ Out of scope (post-hackathon roadmap):**
-- Live OCR / government ID verification (requires KYC provider e.g. Jumio or Onfido)
-- Fine-tuning the local LLM on user Memory data (RAG-based inference is sufficient for v1; fine-tuning requires significantly more GPU compute and labelled data)
-- Expense splitting / budget ledger
-- Multi-cursor real-time itinerary co-editing
-- Multilingual Memory embeddings (English only in v1)
-- AR destination preview
-- In-app video calls
-- Direct flight / hotel booking integration
-
----
-
-## Why TripNest Will Grow
-
-**The path to scale is built into the product.**
-
-1. **Network effects:** Every new verified user makes the match pool stronger for everyone else. A user in Kuala Lumpur benefits from a user registering in Berlin — they might both want to visit Tokyo.
-
-2. **Social layer as organic acquisition:** Journal posts are public by default. A well-written post about a Kyoto trip appears in search, is shareable on Instagram, and brings new users into the app through content — not paid ads.
-
-3. **Travel DNA as a portable identity:** A user's compatibility vector travels with them across every trip. The more they use TripNest, the richer and more accurate their profile becomes — creating a switching cost that no generic app can replicate.
-
-4. **Expansion surface:** The Notebook-aware AI, the reliability infrastructure, and the trust layer are all applicable to **group travel beyond just duos** — families, team retreats, alumni trips. The core architecture is already built for n ≥ 2 travellers.
-
-**The before/after for a TripNest user:**
-
-| Stage | Without TripNest | With TripNest |
-|---|---|---|
-| Finding a companion | Scroll Reddit, post in Facebook groups, hope for the best | Swipe through 5 preference topics → see ranked, verified matches with % scores |
-| Vetting a stranger | No verification, no trust signal | TravelID badge + ID verification gate + Reliability Score |
-| Planning together | WhatsApp for decisions, Wanderlog for itinerary, two tools that never sync | One app: chat → Notebook → AI reads Notebook → itinerary updates |
-| Managing disagreements on budget | Manual negotiation, often unresolved | Switch AI plan version (Budget / Balanced / Comfort) and compare |
-| Remembering what you agreed | Scroll back 300 messages | Open the Notebook — everything is there, categorised and searchable |
-| Sharing the experience | Post to Instagram, lose the context | Write a journal entry, earn TripCoins, build your travel identity |
+Some components (notably TravelID verification and the Gemini itinerary assistant) are intentionally **prototype implementations** — they demonstrate the concept and UX without production-grade backends.
