@@ -171,7 +171,7 @@ Through team discussion and mentor feedback, we narrowed our solution around one
 
 #### Problem Tree — Identifying the Core Problem
 
-![Problem Tree](tripnest_problem_tree.png)
+![Problem Tree](problemTree.png)
 
 This problem tree maps the causes and effects of travelling without a suitable companion. We identified **lack of structured compatibility information** and **lack of trust when meeting strangers** as two major root causes, which led us to focus TripNest on safe and compatible traveller matching.
 
@@ -179,7 +179,7 @@ This problem tree maps the causes and effects of travelling without a suitable c
 
 #### Idea Iteration — From General Travel Assistant to TripNest
 
-![Iteration Timeline](tripnest_iteration_timeline.png)
+![Iteration Timeline](ideaIteration.png)
 
 Our idea evolved through several stages. We first explored a general AI travel assistant, then moved towards companion finding, and finally connected **matching → group discussion → preference alignment → itinerary planning**. This helped us narrow the product instead of continuously adding unrelated travel features.
 
@@ -187,7 +187,7 @@ Our idea evolved through several stages. We first explored a general AI travel a
 
 #### Feature Mindmap — Exploring the Solution Space
 
-![TripNest Feature Mindmap](tripnest_mindmap.png)
+![TripNest Feature Mindmap](featureRoadmap.png)
 
 The mindmap captures the different features we considered during brainstorming. We used it to separate **core features that directly solve our selected problem** from supporting features and ideas that could be removed without affecting the main solution.
 
@@ -195,7 +195,7 @@ The mindmap captures the different features we considered during brainstorming. 
 
 #### User Flow — From Finding a Companion to Planning a Trip
 
-![TripNest User Flow](tripnest_user_flow.png)
+![TripNest User Flow](userWorkflow.png)
 
 The user flow shows the main TripNest journey:
 
