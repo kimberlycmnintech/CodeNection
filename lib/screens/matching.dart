@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/models.dart';
 import '../theme.dart';
+import '../widgets/travel_id_badge.dart';
 
 class FindBuddyScreen extends StatelessWidget {
   final SocialData data;
@@ -103,90 +104,158 @@ class MatchDetailModal extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       decoration: const BoxDecoration(
-        color: Colors.white,
+        color: Color(0xFFF4F6F9),
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
-            const SizedBox(height: 24),
-            CircleAvatar(
-              radius: 40,
-              backgroundColor: coral.withValues(alpha: 0.2),
-              child: Text(match.name.substring(0, 1), style: const TextStyle(color: coral, fontWeight: FontWeight.bold, fontSize: 32)),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('${match.name} · ${match.age}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                if (match.verified) ...[
-                  const SizedBox(width: 4),
-                  const Icon(Icons.verified, color: Colors.blue, size: 24),
-                ],
-              ],
-            ),
-            const SizedBox(height: 24),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade50,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.grey.shade200),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade400,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-              child: Column(
+              const SizedBox(height: 14),
+
+              // Title / Tag
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Compatibility', style: TextStyle(fontWeight: FontWeight.bold)),
-                      Text('${match.compatibilityScore}%', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                  const Divider(),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Reliability', style: TextStyle(fontWeight: FontWeight.bold)),
-                      Text('${match.reliabilityScore}%', style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)),
-                    ],
+                  const Icon(Icons.badge_outlined, color: Color(0xFF0B2240), size: 20),
+                  const SizedBox(width: 6),
+                  Text(
+                    '${match.name}\'s Official Travel Pass',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF0B2240),
+                    ),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 24),
-            const Align(alignment: Alignment.centerLeft, child: Text('Travel Style', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16))),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              alignment: WrapAlignment.start,
-              children: [
-                Chip(label: Text(match.mbti)),
-                Chip(label: Text(match.budgetStyle)),
-                Chip(label: Text(match.travelPace)),
-                Chip(label: Text(match.walkingTolerance)),
-              ],
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              height: 54,
-              child: FilledButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Match request sent to ${match.name}!')));
-                },
-                style: FilledButton.styleFrom(backgroundColor: coral),
-                child: const Text('Send Match Request', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+
+              // ==========================================
+              // PICTURE 2 FORMAT: TRAVEL ID BADGE (LANYARD)
+              // ==========================================
+              TravelIdBadge(
+                profile: match,
+                animateFlipOnMount: true,
+                enableTapToFlip: true,
               ),
-            ),
-          ],
+
+              const SizedBox(height: 16),
+
+              // Match Details Card
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.grey.shade200),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Compatibility Score', style: TextStyle(fontWeight: FontWeight.bold)),
+                        Text('${match.compatibilityScore}% Match', style: const TextStyle(color: Color(0xFF16A34A), fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    const Divider(),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Reliability Rating', style: TextStyle(fontWeight: FontWeight.bold)),
+                        Text('${match.reliabilityScore}% Reliable', style: const TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    const Divider(),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Destination Preference', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                        Text(
+                          match.preferredDestination != 'Unknown' && match.preferredDestination.isNotEmpty
+                              ? '📍 ${match.preferredDestination}'
+                              : '❓ Flexible (Unknown)',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                            color: match.preferredDestination != 'Unknown' && match.preferredDestination.isNotEmpty
+                                ? const Color(0xFF0B2240)
+                                : Colors.orange.shade800,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Travel Dates', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                        Text(
+                          match.preferredDateRange != 'Unknown' && match.preferredDateRange.isNotEmpty
+                              ? '📅 ${match.preferredDateRange}'
+                              : '❓ Flexible (Unknown)',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                            color: match.preferredDateRange != 'Unknown' && match.preferredDateRange.isNotEmpty
+                                ? const Color(0xFF0B2240)
+                                : Colors.orange.shade800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Pair Up Action Button
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: FilledButton.icon(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    data.matchRequests.add(MatchRequest(match.username, TripData()));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Pairing request sent to ${match.name}! 🎉'),
+                        backgroundColor: coral,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.favorite_border_rounded),
+                  label: Text('Send Pair Request to ${match.name}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: coral,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

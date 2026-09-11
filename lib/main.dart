@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'theme.dart';
 import 'screens/splash_screen.dart';
 
@@ -11,11 +12,14 @@ class TripNestApp extends StatelessWidget {
     debugShowCheckedModeBanner: false,
     title: 'TripNest',
     theme: ThemeData(
-      colorScheme: ColorScheme.fromSeed(seedColor: coral),
-      scaffoldBackgroundColor: const Color(0xfff8f9fa),
-      fontFamily: 'Arial',
+      colorScheme: ColorScheme.fromSeed(seedColor: azureBlue),
+      scaffoldBackgroundColor: iceBg,
+      textTheme: GoogleFonts.plusJakartaSansTextTheme(
+        ThemeData.light().textTheme,
+      ),
       useMaterial3: true,
     ),
     home: const SplashScreen(),
   );
 }
+

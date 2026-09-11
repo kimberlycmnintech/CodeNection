@@ -43,14 +43,16 @@ class JournalPost {
 class FriendRequest {
   final String username;
   String status;
-  FriendRequest(this.username, {this.status = 'Pending'});
+  final String? message;
+  FriendRequest(this.username, {this.status = 'Pending', this.message});
 }
 
 class MatchRequest {
   final String username;
   final TripData trip;
   String status;
-  MatchRequest(this.username, this.trip, {this.status = 'Pending'});
+  final String? note;
+  MatchRequest(this.username, this.trip, {this.status = 'Pending', this.note});
 }
 
 // Mock User Profile data for TripNest
@@ -59,6 +61,7 @@ class UserProfile {
   String name;
   int age;
   bool verified;
+  bool isOpenToPair;
   String mbti;
   List<String> interests;
   String budgetStyle;
@@ -67,6 +70,8 @@ class UserProfile {
   String dailyRhythm;
   String destinationVibe;
   String planningStyle;
+  String preferredDestination; // e.g. 'Kyoto, Japan', 'Tokyo, Japan', or 'Unknown'
+  String preferredDateRange; // e.g. 'Oct 12 - Oct 20, 2026' or 'Unknown'
   String? avatarUrl;
   String? instagram;
   String? xHandle;
@@ -78,6 +83,7 @@ class UserProfile {
     required this.name,
     required this.age,
     this.verified = true,
+    this.isOpenToPair = true,
     this.mbti = 'ENFP',
     this.interests = const [],
     this.budgetStyle = 'Budget Explorer',
@@ -86,6 +92,8 @@ class UserProfile {
     this.dailyRhythm = 'Early Riser',
     this.destinationVibe = 'Vibrant City',
     this.planningStyle = 'Spontaneous',
+    this.preferredDestination = 'Unknown',
+    this.preferredDateRange = 'Unknown',
     this.avatarUrl,
     this.instagram,
     this.xHandle,
@@ -97,15 +105,25 @@ class UserProfile {
 class SocialData {
   final String currentUsername = 'benwander';
   final List<String> friends = ['mayaexplores'];
-  final List<FriendRequest> friendRequests = [FriendRequest('annatravel')];
+  final List<FriendRequest> friendRequests = [
+    FriendRequest(
+      'annatravel',
+      message: 'Hey Ben! Saw your Kyoto itinerary. Would love to connect and share travel recommendations!',
+    ),
+  ];
   final List<MatchRequest> matchRequests = [];
   
   UserProfile myProfile = UserProfile(
     username: 'benwander',
     name: 'Ben',
     age: 24,
+    verified: false, // Starts unverified so ID verification flow triggers on first login
+    isOpenToPair: true,
     mbti: 'INTJ',
     interests: ['Photography', 'Foodie'],
+    preferredDestination: 'Unknown',
+    preferredDateRange: 'Unknown',
+    avatarUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=500',
   );
 
   final List<UserProfile> potentialMatches = [
@@ -113,25 +131,83 @@ class SocialData {
       username: 'mayaexplores',
       name: 'Maya',
       age: 23,
+      verified: true,
+      isOpenToPair: true,
       mbti: 'ENFP',
       interests: ['Café Hopping', 'Photography', 'Art'],
-      budgetStyle: 'Budget Traveller',
+      budgetStyle: 'Budget Explorer',
       travelPace: 'Balanced Pace',
       walkingTolerance: '15,000 Steps/Day',
-      compatibilityScore: 91,
+      preferredDestination: 'Kyoto, Japan',
+      preferredDateRange: 'Apr 12 - Apr 22, 2026',
+      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500',
+      compatibilityScore: 94,
       reliabilityScore: 98,
+    ),
+    UserProfile(
+      username: 'alex_globetrotter',
+      name: 'Alex',
+      age: 25,
+      verified: true,
+      isOpenToPair: true,
+      mbti: 'INFJ',
+      interests: ['Museums', 'Local Markets', 'History'],
+      budgetStyle: 'Comfortable',
+      travelPace: 'Relaxed',
+      walkingTolerance: '12,000 Steps/Day',
+      preferredDestination: 'Rome, Italy', // Fixed Destination
+      preferredDateRange: 'May 01 - May 10, 2026', // Fixed Date
+      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500',
+      compatibilityScore: 88,
+      reliabilityScore: 95,
+    ),
+    UserProfile(
+      username: 'sam_wanders',
+      name: 'Sam',
+      age: 27,
+      verified: true,
+      isOpenToPair: true,
+      mbti: 'ENTP',
+      interests: ['Foodie', 'Nightlife', 'Photography'],
+      budgetStyle: 'Luxury',
+      travelPace: 'Packed Itinerary',
+      walkingTolerance: '20,000 Steps/Day',
+      preferredDestination: 'Tokyo, Japan', // Fixed Destination
+      preferredDateRange: 'Unknown', // Flexible Date
+      avatarUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=500',
+      compatibilityScore: 82,
+      reliabilityScore: 91,
     ),
     UserProfile(
       username: 'johndoe',
       name: 'John',
       age: 26,
+      verified: true,
+      isOpenToPair: true,
       mbti: 'ISTP',
       interests: ['Nature', 'Hiking', 'Street Food'],
       budgetStyle: 'Comfortable',
       travelPace: 'Packed Itinerary',
       walkingTolerance: '25,000 Steps/Day',
-      compatibilityScore: 64,
+      preferredDestination: 'Unknown',
+      preferredDateRange: 'Unknown',
+      avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=500',
+      compatibilityScore: 68,
       reliabilityScore: 85,
+    ),
+    UserProfile(
+      username: 'lisa_quiet',
+      name: 'Lisa',
+      age: 22,
+      verified: true,
+      isOpenToPair: false, // Closed to pair
+      mbti: 'ISFP',
+      interests: ['Reading', 'Parks'],
+      budgetStyle: 'Budget Explorer',
+      travelPace: 'Slow Motion',
+      avatarUrl: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=500',
+      compatibilityScore: 75,
+      reliabilityScore: 90,
     ),
   ];
 

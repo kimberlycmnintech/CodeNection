@@ -32,6 +32,7 @@ class _ItineraryPageState extends State<ItineraryPage> {
   String _sortBy = 'date'; // 'date', 'updated', 'places'
 
   @override
+<<<<<<< Updated upstream
   void initState() {
     super.initState();
     _trips = TripRepository.getDemoTrips();
@@ -57,6 +58,16 @@ class _ItineraryPageState extends State<ItineraryPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Row(
+=======
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: mintBg,
+      appBar: AppBar(
+        backgroundColor: mintBg,
+        elevation: 0,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+>>>>>>> Stashed changes
           children: [
             Text('🪺 ', style: TextStyle(fontSize: 20)),
             Text('Create New Trip Folder', style: TextStyle(fontWeight: FontWeight.bold)),

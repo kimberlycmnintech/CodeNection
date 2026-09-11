@@ -116,16 +116,13 @@ class _ProfilePageState extends State<ProfilePage> {
     final isComplete = _isAllRequiredFilled;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6F9),
+      backgroundColor: iceBg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0.5,
-        title: const Text(
-          'Profile & Travel Pass',
-          style: TextStyle(
-            fontWeight: FontWeight.w800,
-            color: Color(0xFF1E242B),
-          ),
+        backgroundColor: iceBg,
+        elevation: 0,
+        title: Text(
+          'Passenger Profile',
+          style: boldItalicTitle(22, color: darkSlate),
         ),
         centerTitle: true,
       ),
@@ -147,56 +144,60 @@ class _ProfilePageState extends State<ProfilePage> {
                   letterSpacing: 1.0,
                 ),
               ),
-              if (isComplete)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF27AE60).withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFF27AE60), width: 1.2),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.verified, size: 14, color: Color(0xFF27AE60)),
-                      SizedBox(width: 4),
-                      Text(
-                        'ISSUED & ACTIVE',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF27AE60),
-                          letterSpacing: 0.5,
-                        ),
+              Row(
+                children: [
+                  if (profile.verified)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFF10B981), width: 1.2),
                       ),
-                    ],
-                  ),
-                )
-              else
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.amber.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.amber.shade800, width: 1.2),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.lock_clock_rounded, size: 14, color: Colors.amber.shade800),
-                      const SizedBox(width: 4),
-                      Text(
-                        'PENDING DETAILS',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.amber.shade800,
-                          letterSpacing: 0.5,
-                        ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.verified, size: 14, color: Color(0xFF10B981)),
+                          SizedBox(width: 4),
+                          Text(
+                            'ID VERIFIED',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF10B981),
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
+                    )
+                  else
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.orange.shade800, width: 1.2),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.shield_outlined, size: 14, color: Colors.orange.shade800),
+                          const SizedBox(width: 4),
+                          Text(
+                            'UNVERIFIED ID',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.orange.shade800,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -529,6 +530,68 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
           ),
+          // ==========================================
+          // 2.5 OPEN TO PAIR SETTINGS SECTION
+          // ==========================================
+          Card(
+            elevation: 1.5,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: profile.isOpenToPair ? const Color(0xFFDCFCE7) : Colors.grey.shade200,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      profile.isOpenToPair ? Icons.people_rounded : Icons.people_outline_rounded,
+                      color: profile.isOpenToPair ? const Color(0xFF16A34A) : Colors.grey.shade700,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Open to Pair',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1E242B),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          profile.isOpenToPair
+                              ? 'Your profile & Travel Pass are visible to potential travel buddies in the pairing pool.'
+                              : 'Your profile is currently hidden from pairing network.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Switch(
+                    value: profile.isOpenToPair,
+                    activeThumbColor: const Color(0xFF10B981),
+                    onChanged: (val) {
+                      setState(() {
+                        profile.isOpenToPair = val;
+                      });
+                      widget.onChanged();
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
           const SizedBox(height: 20),
 
           // ==========================================
@@ -545,55 +608,8 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
           const SizedBox(height: 20),
 
-          // ==========================================
-          // 4. FRIEND REQUESTS SECTION
-          // ==========================================
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('Friend requests', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
-              Text('${widget.data.friendRequests.length}', style: const TextStyle(color: coral, fontWeight: FontWeight.bold)),
-            ],
-          ),
-          const SizedBox(height: 8),
-          ...widget.data.friendRequests.map(
-            (request) => Card(
-              child: ListTile(
-                leading: const CircleAvatar(child: Text('A')),
-                title: Text('@${request.username}'),
-                subtitle: Text(request.status),
-                trailing: request.status == 'Pending'
-                    ? Wrap(
-                        spacing: 4,
-                        children: [
-                          IconButton(
-                            onPressed: () => acceptFriend(request),
-                            icon: const Icon(Icons.check, color: Colors.green),
-                          ),
-                          IconButton(
-                            onPressed: () => declineFriend(request),
-                            icon: const Icon(Icons.close, color: Colors.red),
-                          ),
-                        ],
-                      )
-                    : null,
-              ),
-            ),
-          ),
         ],
       ),
     );
   }
-
-  void acceptFriend(FriendRequest request) {
-    setState(() {
-      request.status = 'Accepted';
-      widget.data.friends.add(request.username);
-      widget.data.friendRequests.remove(request);
-    });
-    widget.onChanged();
-  }
-
-  void declineFriend(FriendRequest request) =>
-      setState(() => widget.data.friendRequests.remove(request));
 }

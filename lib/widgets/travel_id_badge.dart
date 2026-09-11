@@ -300,17 +300,51 @@ class _TravelIdBadgeState extends State<TravelIdBadge>
                   ],
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  'DROP : 26',
-                  style: GoogleFonts.spaceMono(
-                    fontSize: 9.5,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF222222),
-                    letterSpacing: 0.4,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    'DROP : 26',
+                    style: GoogleFonts.spaceMono(
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF222222),
+                      letterSpacing: 0.4,
+                    ),
                   ),
-                ),
+                  if (widget.profile.verified) ...[
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981),
+                        borderRadius: BorderRadius.circular(4),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF10B981).withValues(alpha: 0.3),
+                            blurRadius: 4,
+                          ),
+                        ],
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.verified, size: 10, color: Colors.white),
+                          SizedBox(width: 3),
+                          Text(
+                            'VERIFIED',
+                            style: TextStyle(
+                              fontSize: 8.5,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ],
           ),
