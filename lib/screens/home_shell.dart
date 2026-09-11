@@ -69,7 +69,16 @@ class _HomeShellState extends State<HomeShell> {
           ? TripsPage(trip: trip, onOpenTrip: openTrip)
           : HomeFeed(trip: trip, onOpenTrip: openTrip, onSeeAll: openTripsList),
       // Tab 1: Itinerary
-      ItineraryPage(trip: trip, data: widget.data, onOpenTrip: openTrip),
+      ItineraryPage(
+        trip: trip,
+        data: widget.data,
+        onOpenTrip: openTrip,
+        onNavigateToChat: (chatId) {
+          setState(() {
+            selected = 3; // Switch directly to Chat tab!
+          });
+        },
+      ),
       // Tab 2: Pairing (Middle & Outstanding!)
       PairingPage(data: widget.data, trip: trip),
       // Tab 3: Chat
