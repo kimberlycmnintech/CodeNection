@@ -30,26 +30,33 @@ class TravelIdBadge extends StatefulWidget {
   });
 
   @override
-  State<TravelIdBadge> createState() => _TravelIdBadgeState();
+  State<TravelIdBadge> createState() => TravelIdBadgeState();
 }
 
-class _TravelIdBadgeState extends State<TravelIdBadge>
-    with SingleTickerProviderStateMixin {
+class TravelIdBadgeState extends State<TravelIdBadge>
+    with TickerProviderStateMixin {
   late AnimationController _flipController;
   late Animation<double> _flipAnimation;
+
+  // Interactive 3D orbital rotation state
+  double _rotX = 0.0; // Pitch (up/down tilt)
+  double _rotY = 0.0; // Yaw (left/right spin)
+
+  late AnimationController _resetController;
+  late Animation<double> _resetXAnimation;
+  late Animation<double> _resetYAnimation;
 
   @override
   void initState() {
     super.initState();
 
-    // 6 * pi = 3 full turns (several flips) before landing on front (angle 0)
     _flipController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2400),
+      duration: const Duration(milliseconds: 1400),
     );
 
     _flipAnimation = Tween<double>(
-      begin: 6 * math.pi,
+      begin: 4 * math.pi,
       end: 0.0,
     ).animate(
       CurvedAnimation(
@@ -58,9 +65,13 @@ class _TravelIdBadgeState extends State<TravelIdBadge>
       ),
     );
 
+    _resetController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+
     if (widget.animateFlipOnMount) {
-      // Delay slightly for dramatic entry effect
-      Future.delayed(const Duration(milliseconds: 250), () {
+      Future.delayed(const Duration(milliseconds: 200), () {
         if (mounted) {
           _flipController.forward(from: 0.0);
         }
@@ -73,14 +84,51 @@ class _TravelIdBadgeState extends State<TravelIdBadge>
   @override
   void dispose() {
     _flipController.dispose();
+    _resetController.dispose();
     super.dispose();
   }
 
-  void _triggerFlip() {
-    if (!widget.enableTapToFlip) return;
-    if (_flipController.isAnimating) return;
+  /// Flip card 180 degrees cleanly
+  void flip180() {
+    setState(() {
+      _rotY += math.pi;
+    });
+  }
 
-    _flipController.forward(from: 0.0);
+  /// Reset 3D rotation to front zero orientation
+  void resetView() {
+    _resetXAnimation = Tween<double>(begin: _rotX, end: 0.0).animate(
+      CurvedAnimation(parent: _resetController, curve: Curves.easeOutCubic),
+    );
+    _resetYAnimation = Tween<double>(
+      begin: _rotY,
+      end: (_rotY / (2 * math.pi)).round() * (2 * math.pi),
+    ).animate(
+      CurvedAnimation(parent: _resetController, curve: Curves.easeOutCubic),
+    );
+
+    _resetController.forward(from: 0.0).then((_) {
+      if (mounted) {
+        setState(() {
+          _rotX = 0.0;
+          _rotY = (_rotY / (2 * math.pi)).round() * (2 * math.pi);
+        });
+      }
+    });
+    _resetController.addListener(() {
+      setState(() {
+        _rotX = _resetXAnimation.value;
+        _rotY = _resetYAnimation.value;
+      });
+    });
+  }
+
+  void _onPanUpdate(DragUpdateDetails details) {
+    if (!widget.enableTapToFlip) return;
+    setState(() {
+      _rotY += details.delta.dx * 0.011;
+      _rotX = (_rotX - details.delta.dy * 0.011).clamp(-0.55, 0.55);
+    });
   }
 
   @override
@@ -103,13 +151,12 @@ class _TravelIdBadgeState extends State<TravelIdBadge>
         : (widget.profile.avatarUrl ??
             'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500');
 
-    // Preferences
     final pace = widget.profile.travelPace.isNotEmpty ? widget.profile.travelPace : 'Relaxed';
     final vibe = widget.profile.destinationVibe.isNotEmpty ? widget.profile.destinationVibe : 'Vibrant City';
     final style = widget.profile.planningStyle.isNotEmpty ? widget.profile.planningStyle : 'Spontaneous';
 
-    const cardWidth = 276.0;
-    const cardHeight = 490.0;
+    const cardWidth = 280.0;
+    const cardHeight = 495.0;
     const pouchHorizontalPadding = 12.0;
     const pouchTopExtension = 64.0;
     const pouchBottomExtension = 14.0;
@@ -118,61 +165,70 @@ class _TravelIdBadgeState extends State<TravelIdBadge>
 
     return Center(
       child: GestureDetector(
-        onTap: _triggerFlip,
-        child: SizedBox(
-          width: totalPouchWidth,
-          height: totalPouchHeight,
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              // ====================================================
-              // 1. CLEAR PLASTIC VINYL SLEEVE / POUCH (OUTER CASING)
-              // ====================================================
-              Positioned.fill(
-                child: CustomPaint(
-                  painter: _PlasticSleevePainter(),
-                ),
-              ),
+        onPanUpdate: _onPanUpdate,
+        onDoubleTap: flip180,
+        child: AnimatedBuilder(
+          animation: _flipAnimation,
+          builder: (context, child) {
+            final mountAngle = _flipAnimation.value;
+            final currentAngleY = _rotY + mountAngle;
+            final currentAngleX = _rotX;
 
-              // ====================================================
-              // 2. TOP METALLIC LANYARD RING & HARDWARE CLIP
-              // ====================================================
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: SizedBox(
-                    width: 60,
-                    height: 48,
-                    child: CustomPaint(
-                      painter: _LanyardClipPainter(),
+            // Determine if front or back is visible
+            final normY = (currentAngleY % (2 * math.pi)).abs();
+            final isFront = normY <= (math.pi / 2) || normY >= (3 * math.pi / 2);
+
+            // Dynamic lighting glare calculation based on 3D rotation
+            final glareLightX = math.cos(currentAngleY) * 0.5 + 0.5;
+            final glareLightY = math.sin(currentAngleX) * 0.5 + 0.5;
+
+            return Transform(
+              alignment: Alignment.center,
+              transform: Matrix4.identity()
+                ..setEntry(3, 2, 0.0016) // 3D Perspective depth
+                ..rotateX(currentAngleX)
+                ..rotateY(currentAngleY),
+              child: SizedBox(
+                width: totalPouchWidth,
+                height: totalPouchHeight,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    // ====================================================
+                    // 1. CLEAR PLASTIC VINYL SLEEVE / POUCH (OUTER CASING)
+                    // ====================================================
+                    Positioned.fill(
+                      child: CustomPaint(
+                        painter: _PlasticSleevePainter(),
+                      ),
                     ),
-                  ),
-                ),
-              ),
 
-              // ====================================================
-              // 3. FLIPPING BADGE CARD (INSIDE THE SLEEVE)
-              // ====================================================
-              Positioned(
-                top: pouchTopExtension,
-                left: pouchHorizontalPadding,
-                width: cardWidth,
-                height: cardHeight,
-                child: AnimatedBuilder(
-                  animation: _flipAnimation,
-                  builder: (context, child) {
-                    final angle = _flipAnimation.value;
-                    // Determine which face is visible
-                    final normalized = (angle % (2 * math.pi));
-                    final isFront = normalized <= (math.pi / 2) || normalized >= (3 * math.pi / 2);
+                    // ====================================================
+                    // 2. TOP METALLIC LANYARD RING & HARDWARE CLIP
+                    // ====================================================
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: SizedBox(
+                          width: 60,
+                          height: 48,
+                          child: CustomPaint(
+                            painter: _LanyardClipPainter(),
+                          ),
+                        ),
+                      ),
+                    ),
 
-                    return Transform(
-                      alignment: Alignment.center,
-                      transform: Matrix4.identity()
-                        ..setEntry(3, 2, 0.0018) // Perspective tilt
-                        ..rotateY(angle),
+                    // ====================================================
+                    // 3. BADGE CARD FACE (FRONT OR BACK)
+                    // ====================================================
+                    Positioned(
+                      top: pouchTopExtension,
+                      left: pouchHorizontalPadding,
+                      width: cardWidth,
+                      height: cardHeight,
                       child: isFront
                           ? _buildCardFront(
                               name: name,
@@ -194,40 +250,47 @@ class _TravelIdBadgeState extends State<TravelIdBadge>
                                 height: cardHeight,
                               ),
                             ),
-                    );
-                  },
-                ),
-              ),
+                    ),
 
-              // ====================================================
-              // 4. VINYL GLOSS & LIGHT REFLECTION OVERLAY
-              // ====================================================
-              Positioned(
-                top: pouchTopExtension,
-                left: pouchHorizontalPadding,
-                width: cardWidth,
-                height: cardHeight,
-                child: IgnorePointer(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(4),
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Colors.white.withValues(alpha: 0.18),
-                          Colors.white.withValues(alpha: 0.04),
-                          Colors.transparent,
-                          Colors.white.withValues(alpha: 0.08),
-                        ],
-                        stops: const [0.0, 0.25, 0.6, 1.0],
+                    // ====================================================
+                    // 4. DYNAMIC VINYL 3D GLARE & SPECULAR REFLECTION OVERLAY
+                    // ====================================================
+                    Positioned(
+                      top: pouchTopExtension,
+                      left: pouchHorizontalPadding,
+                      width: cardWidth,
+                      height: cardHeight,
+                      child: IgnorePointer(
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 40),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(4),
+                            gradient: LinearGradient(
+                              begin: Alignment(
+                                -1.0 + (glareLightX * 2.0),
+                                -1.0 + (glareLightY * 2.0),
+                              ),
+                              end: Alignment(
+                                1.0 - (glareLightX * 2.0),
+                                1.0 - (glareLightY * 2.0),
+                              ),
+                              colors: [
+                                Colors.white.withValues(alpha: 0.28 * glareLightX),
+                                Colors.white.withValues(alpha: 0.08),
+                                Colors.transparent,
+                                Colors.white.withValues(alpha: 0.12 * glareLightY),
+                              ],
+                              stops: const [0.0, 0.3, 0.65, 1.0],
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );

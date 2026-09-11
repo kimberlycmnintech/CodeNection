@@ -303,13 +303,6 @@ class _InteractiveItineraryMapState extends State<InteractiveItineraryMap> {
               right: 14,
               bottom: 14,
               child: _buildSelectedStopPopover(widget.stops[selectedStopIndex!], selectedStopIndex! + 1),
-            )
-          else if (hasStops)
-            Positioned(
-              left: 14,
-              right: 14,
-              bottom: 12,
-              child: _buildRouteSummaryBar(),
             ),
 
           // --------------------------------------------------
@@ -317,7 +310,7 @@ class _InteractiveItineraryMapState extends State<InteractiveItineraryMap> {
           // --------------------------------------------------
           Positioned(
             right: 14,
-            bottom: selectedStopIndex != null ? 140 : 54,
+            bottom: selectedStopIndex != null ? 140 : 16,
             child: Column(
               children: [
                 _buildMapControlBtn(
@@ -556,43 +549,7 @@ class _InteractiveItineraryMapState extends State<InteractiveItineraryMap> {
     );
   }
 
-  Widget _buildRouteSummaryBar() {
-    final routeSteps = widget.stops.asMap().entries.map((e) => '${e.key + 1}. ${e.value.name.split(' ').first}').join('  ➔  ');
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.95),
-        borderRadius: BorderRadius.circular(10),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.route, size: 15, color: coral),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              routeSteps,
-              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          const SizedBox(width: 6),
-          const Text(
-            'Tap pin for details',
-            style: TextStyle(fontSize: 10, color: Colors.grey),
-          ),
-        ],
-      ),
-    );
-  }
 
   List<Offset> _calculateProjectedPoints(List<ItineraryPlaceStop> stops, Size size) {
     if (stops.isEmpty) return [];

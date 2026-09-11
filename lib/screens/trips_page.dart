@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/models.dart';
+import '../models/itinerary_trip_models.dart';
+import '../widgets/trip_calendar_view.dart';
 import '../theme.dart';
 
 class TripsPage extends StatefulWidget {
@@ -79,71 +81,134 @@ class _TripsPageState extends State<TripsPage> {
         padding: const EdgeInsets.all(16),
         children: [
           // --------------------------------------------------
-          // TOP FILTER PILLS (REF MOCKUP SCREEN 3)
+          // TOP-LEVEL VIEW SWITCHER: ALL TRIPS vs CALENDAR
           // --------------------------------------------------
-          Row(
-            children: ['All', 'Upcoming', 'Ongoing', 'Completed'].map((status) {
-              final isSelected = _selectedStatus == status;
-              return Expanded(
-                child: GestureDetector(
-                  onTap: () => setState(() => _selectedStatus = status),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    margin: const EdgeInsets.symmetric(horizontal: 3),
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    decoration: BoxDecoration(
-                      color: isSelected ? darkSlate : Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        if (isSelected)
-                          BoxShadow(
-                            color: darkSlate.withValues(alpha: 0.25),
-                            blurRadius: 8,
-                            offset: const Offset(0, 3),
-                          )
-                        else
-                          const BoxShadow(
-                            color: Color(0x0F0F172A),
-                            blurRadius: 4,
-                          ),
-                      ],
-                    ),
-                    child: Center(
-                      child: Text(
-                        status,
-                        style: isSelected
-                            ? boldItalicTitle(11.5, color: Colors.white)
-                            : bodyFont(11.5, color: darkSlate, weight: FontWeight.w600),
+          Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFFE2E8F0).withValues(alpha: 0.7),
+              borderRadius: BorderRadius.circular(22),
+            ),
+            padding: const EdgeInsets.all(4),
+            child: Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() {
+                      if (_selectedStatus == 'Calendar') _selectedStatus = 'All';
+                    }),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      decoration: BoxDecoration(
+                        color: _selectedStatus != 'Calendar' ? darkSlate : Colors.transparent,
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.folder_outlined, size: 17, color: _selectedStatus != 'Calendar' ? Colors.white : darkSlate),
+                          const SizedBox(width: 7),
+                          Text('All Trips', style: TextStyle(color: _selectedStatus != 'Calendar' ? Colors.white : darkSlate, fontWeight: FontWeight.bold, fontSize: 13)),
+                        ],
                       ),
                     ),
                   ),
                 ),
-              );
-            }).toList(),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => _selectedStatus = 'Calendar'),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      decoration: BoxDecoration(
+                        color: _selectedStatus == 'Calendar' ? darkSlate : Colors.transparent,
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.calendar_month_rounded, size: 17, color: _selectedStatus == 'Calendar' ? Colors.white : darkSlate),
+                          const SizedBox(width: 7),
+                          Text('Calendar', style: TextStyle(color: _selectedStatus == 'Calendar' ? Colors.white : darkSlate, fontWeight: FontWeight.bold, fontSize: 13)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
+          const SizedBox(height: 14),
+
+          if (_selectedStatus != 'Calendar') ...[
+            // --------------------------------------------------
+            // SUB-FILTER PILLS UNDER ALL TRIPS (All, Upcoming, Ongoing, Past)
+            // --------------------------------------------------
+            Row(
+              children: ['All', 'Upcoming', 'Ongoing', 'Past'].map((status) {
+                final isSelected = _selectedStatus == status || (_selectedStatus == 'Completed' && status == 'Past');
+                return Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => _selectedStatus = status == 'Past' ? 'Completed' : status),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      margin: const EdgeInsets.symmetric(horizontal: 3),
+                      padding: const EdgeInsets.symmetric(vertical: 9),
+                      decoration: BoxDecoration(
+                        color: isSelected ? const Color(0xFFDDE7F7) : Colors.white,
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: isSelected ? const Color(0xFF819EE5) : const Color(0xFFE2E8F0),
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          status,
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                            color: isSelected ? const Color(0xFF2563EB) : const Color(0xFF64748B),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 16),
+          ],
 
           const SizedBox(height: 20),
 
-          // --------------------------------------------------
-          // CURRENT TRIP CARD (LINKED TO STATE)
-          // --------------------------------------------------
-          _buildTripCard(
-            _TripCardData(
-              name: widget.trip.name.isNotEmpty ? widget.trip.name : 'Trip to Japan',
-              status: 'Active',
-              dates: '${widget.trip.startDate} - ${widget.trip.endDate}',
-              travellers: '${widget.trip.places.length} Places Saved',
-              imageUrl: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=800',
-              isPrimary: true,
+          if (_selectedStatus == 'Calendar')
+            TripCalendarView(
+              trips: TripRepository.getDemoTrips(),
+              onOpenTrip: (tripFolder) => widget.onOpenTrip(),
+            )
+          else ...[
+            // --------------------------------------------------
+            // CURRENT TRIP CARD (LINKED TO STATE)
+            // --------------------------------------------------
+            _buildTripCard(
+              _TripCardData(
+                name: widget.trip.name.isNotEmpty ? widget.trip.name : 'Trip to Japan',
+                status: 'Active',
+                dates: '${widget.trip.startDate} - ${widget.trip.endDate}',
+                travellers: '${widget.trip.places.length} Places Saved',
+                imageUrl: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=800',
+                isPrimary: true,
+              ),
             ),
-          ),
 
-          const SizedBox(height: 14),
+            const SizedBox(height: 14),
 
-          // --------------------------------------------------
-          // FILTERED TRIPS CARDS (REF MOCKUP SCREEN 3 LAYOUT)
-          // --------------------------------------------------
-          ...filteredTrips.map((t) => _buildTripCard(t)),
+            // --------------------------------------------------
+            // FILTERED TRIPS CARDS (REF MOCKUP SCREEN 3 LAYOUT)
+            // --------------------------------------------------
+            ...filteredTrips.map((t) => _buildTripCard(t)),
+          ],
+          const SizedBox(height: 80),
         ],
       ),
     );

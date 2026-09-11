@@ -482,201 +482,158 @@ class _PairingPageState extends State<PairingPage> {
 
   @override
   Widget build(BuildContext context) {
-    final myProfile = widget.data.myProfile;
-
     return Scaffold(
-      backgroundColor: iceBg,
-      appBar: AppBar(
-        backgroundColor: iceBg,
-        elevation: 0,
-        titleSpacing: 16,
-        title: Row(
+      backgroundColor: const Color(0xFFF4F7FB),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
           children: [
-            Container(
-              padding: const EdgeInsets.all(7),
-              decoration: const BoxDecoration(
-                color: Color(0xFF0F172A),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.landscape_rounded,
-                color: Colors.white,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Travel Pairing',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: const Color(0xFF0F172A),
-                        letterSpacing: -0.3,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    if (myProfile.verified)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF0284C7).withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: const Color(0xFF0284C7).withValues(alpha: 0.3)),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.verified, size: 11, color: Color(0xFF0284C7)),
-                            SizedBox(width: 3),
-                            Text(
-                              'VERIFIED',
-                              style: TextStyle(
-                                fontSize: 9.5,
-                                fontWeight: FontWeight.w800,
-                                color: Color(0xFF0284C7),
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-                Text(
-                  'Find travel companions matching your rhythm',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 11.5,
-                    color: const Color(0xFF64748B),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            onPressed: () {},
-            tooltip: 'Notifications',
-            icon: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                const Icon(Icons.notifications_none_rounded, color: Color(0xFF0F172A), size: 24),
-                Positioned(
-                  top: -2,
-                  right: -2,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFEF4444),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Text(
-                      '1',
-                      style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+            // --------------------------------------------------
+            // VIEW STATE 1: PRE-PAIRING PREFERENCE SETUP
+            // --------------------------------------------------
+            if (!_showingMatches) ...[
+              // 1. Section Heading & Helper Text (Consistent with Trips tab font)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Set your pairing preferences',
+                    style: GoogleFonts.playfairDisplay(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w800,
+                      fontStyle: FontStyle.italic,
+                      color: const Color(0xFF0F172A),
+                      letterSpacing: -0.5,
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 4),
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: CircleAvatar(
-              radius: 17,
-              backgroundImage: NetworkImage(
-                myProfile.avatarUrl ?? 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=500',
+                  const SizedBox(height: 4),
+                  Text(
+                    'We\'ll use your destination, travel timing, and travel style to find the most compatible travel companions.',
+                    style: GoogleFonts.inter(
+                      fontSize: 12.5,
+                      color: const Color(0xFF64748B),
+                      fontWeight: FontWeight.w500,
+                      height: 1.35,
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // --------------------------------------------------
-          // VIEW STATE 1: PRE-PAIRING PREFERENCE SETUP
-          // --------------------------------------------------
-          if (!_showingMatches) ...[
-            // 1. Section Heading & Helper Text
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Set your pairing preferences',
-                  style: boldItalicTitle(20, color: darkSlate),
+
+              const SizedBox(height: 18),
+
+              // 1. Destination
+              _buildDestinationQuestionnaireCard(),
+              const SizedBox(height: 14),
+
+              // 2. Travel Dates
+              _buildDateQuestionnaireCard(),
+              const SizedBox(height: 14),
+
+              // 3. Your Match Style (Summary card with Edit button)
+              _buildMatchStyleCard(),
+
+              const SizedBox(height: 22),
+
+              // 5. Start Pairing Action Button (Large Dark Navy CTA)
+              SizedBox(
+                width: double.infinity,
+                height: 54,
+                child: FilledButton.icon(
+                  onPressed: _onStartPairingPressed,
+                  icon: const Icon(Icons.auto_awesome_rounded, size: 20),
+                  label: const Text(
+                    'Start Pairing',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                  ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF0F172A),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    elevation: 2,
+                  ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'We\'ll use your destination, travel timing, and travel style to find the most compatible travel companions.',
-                  style: bodyFont(12.5),
-                ),
-              ],
-            ),
+              ),
 
-            const SizedBox(height: 16),
+              const SizedBox(height: 20),
 
-            // 1. Destination
-            _buildDestinationQuestionnaireCard(),
-            const SizedBox(height: 14),
+              // 6. Safe Pairing Guarantee Card
+              _buildSafePairingCard(),
+            ]
 
-            // 2. Travel Dates
-            _buildDateQuestionnaireCard(),
-            const SizedBox(height: 14),
+            // --------------------------------------------------
+            // VIEW STATE 2: RECOMMENDED BUDDIES MATCHES LIST (PICTURE 2)
+            // --------------------------------------------------
+            else ...[
+              // Header for matches list
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Recommended Buddies',
+                    style: GoogleFonts.playfairDisplay(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w800,
+                      fontStyle: FontStyle.italic,
+                      color: const Color(0xFF0F172A),
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Travelers matching your rhythm, pace and destination preferences.',
+                    style: GoogleFonts.inter(
+                      fontSize: 12.5,
+                      color: const Color(0xFF64748B),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
 
-            // 3. Your Match Style (Summary card with Edit button)
-            _buildMatchStyleCard(),
-
-            const SizedBox(height: 22),
-
-            // 5. Start Pairing Action Button (Large Dark Navy CTA)
-            SizedBox(
-              width: double.infinity,
-              height: 54,
-              child: FilledButton.icon(
-                onPressed: _onStartPairingPressed,
-                icon: const Icon(Icons.auto_awesome_rounded, size: 20),
-                label: const Text(
-                  'Start Pairing',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-                ),
-                style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF0F172A),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
+              // Top Controls Row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  InkWell(
+                    onTap: () => setState(() => _showingMatches = false),
                     borderRadius: BorderRadius.circular(14),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.tune_rounded, size: 16, color: Color(0xFF0F172A)),
+                          SizedBox(width: 8),
+                          Text(
+                            'Edit Trip Parameters',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF0F172A),
+                            ),
+                          ),
+                          SizedBox(width: 6),
+                          Icon(Icons.chevron_right_rounded, size: 18, color: Color(0xFF64748B)),
+                        ],
+                      ),
+                    ),
                   ),
-                  elevation: 2,
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // 6. Safe Pairing Guarantee Card
-            _buildSafePairingCard(),
-          ]
-
-          // --------------------------------------------------
-          // VIEW STATE 2: RECOMMENDED BUDDIES MATCHES LIST (PICTURE 2)
-          // --------------------------------------------------
-          else ...[
-            // Top Controls Row
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                InkWell(
-                  onTap: () => setState(() => _showingMatches = false),
-                  borderRadius: BorderRadius.circular(14),
-                  child: Container(
+                  Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -690,147 +647,95 @@ class _PairingPageState extends State<PairingPage> {
                         ),
                       ],
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.tune_rounded, size: 16, color: Color(0xFF0F172A)),
-                        SizedBox(width: 8),
+                        const Icon(Icons.people_outline_rounded, size: 16, color: Color(0xFF0F172A)),
+                        const SizedBox(width: 6),
                         Text(
-                          'Edit Trip Parameters',
-                          style: TextStyle(
+                          '${sortedAndFilteredMatches.length} candidates found',
+                          style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
                             color: Color(0xFF0F172A),
                           ),
                         ),
-                        SizedBox(width: 6),
-                        Icon(Icons.chevron_right_rounded, size: 18, color: Color(0xFF64748B)),
                       ],
                     ),
                   ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF0F172A).withValues(alpha: 0.03),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.people_outline_rounded, size: 16, color: Color(0xFF0F172A)),
-                      const SizedBox(width: 6),
-                      Text(
-                        '${sortedAndFilteredMatches.length} candidates found',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF0F172A),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 16),
-
-            // Filter Pills Row
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _buildFilterPill('All', 'All Buddies (${sortedAndFilteredMatches.length})', hasCheck: true),
-                  const SizedBox(width: 10),
-                  _buildFilterPill('High Match', '🔥 80%+ Match'),
-                  const SizedBox(width: 10),
-                  _buildFilterPill('Relaxed', '🌿 Relaxed / Balanced'),
-                  const SizedBox(width: 10),
-                  _buildFilterPill('Budget', '💰 Budget Explorer'),
                 ],
               ),
-            ),
 
-            const SizedBox(height: 20),
+              const SizedBox(height: 16),
 
-            // Section Header: Recommended Buddies + Sort Dropdown
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const Icon(Icons.group_rounded, color: Color(0xFF0F172A), size: 24),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Recommended Buddies',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF0F172A),
-                          letterSpacing: -0.3,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Travel farther together. People who match your style, destination and vibe.',
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          color: Colors.grey.shade600,
-                          height: 1.3,
-                        ),
-                      ),
-                    ],
-                  ),
+              // Filter Pills Row
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _buildFilterPill('All', 'All Buddies (${sortedAndFilteredMatches.length})', hasCheck: true),
+                    const SizedBox(width: 10),
+                    _buildFilterPill('High Match', '🔥 80%+ Match'),
+                    const SizedBox(width: 10),
+                    _buildFilterPill('Relaxed', '🌿 Relaxed / Balanced'),
+                    const SizedBox(width: 10),
+                    _buildFilterPill('Budget', '💰 Budget Explorer'),
+                  ],
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.transparent,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.swap_vert_rounded, size: 16, color: Colors.grey.shade700),
-                      const SizedBox(width: 4),
-                      Text(
-                        'High to Low Relevance',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade700,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(width: 2),
-                      Icon(Icons.keyboard_arrow_down_rounded, size: 16, color: Colors.grey.shade700),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+              ),
 
+              const SizedBox(height: 14),
+
+              // Secondary Sorting / Info Row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Matched by Travel Pace & Destination',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.swap_vert_rounded, size: 16, color: Colors.grey.shade700),
+                        const SizedBox(width: 4),
+                        Text(
+                          'High to Low Relevance',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade700,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(width: 2),
+                        Icon(Icons.keyboard_arrow_down_rounded, size: 16, color: Colors.grey.shade700),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 16),
+
+              // Match Cards List
+              if (sortedAndFilteredMatches.isEmpty)
+                _buildEmptyMatchState()
+              else
+                ...sortedAndFilteredMatches.map((match) => _buildBuddyCard(match)),
+            ],
             const SizedBox(height: 16),
-
-            // Match Cards List
-            if (sortedAndFilteredMatches.isEmpty)
-              _buildEmptyMatchState()
-            else
-              ...sortedAndFilteredMatches.map((match) => _buildBuddyCard(match)),
           ],
-
-          const SizedBox(height: 16),
-        ],
+        ),
       ),
     );
   }
