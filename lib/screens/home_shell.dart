@@ -70,7 +70,6 @@ class _HomeShellState extends State<HomeShell> {
           ? TripsPage(trip: trip, onOpenTrip: openTrip)
           : HomeFeed(trip: trip, onOpenTrip: openTrip, onSeeAll: openTripsList),
       // Tab 1: Itinerary
-<<<<<<< Updated upstream
       ItineraryPage(
         trip: trip,
         data: widget.data,
@@ -81,17 +80,12 @@ class _HomeShellState extends State<HomeShell> {
           });
         },
       ),
-      // Tab 2: Pairing (Middle & Outstanding!)
-      PairingPage(data: widget.data, trip: trip),
-=======
-      ItineraryPage(trip: trip, data: widget.data, onOpenTrip: openTrip),
       // Tab 2: Pairing
       PairingPage(
         data: widget.data,
         trip: trip,
         onNavigateToChat: () => _onTabSelected(3),
       ),
->>>>>>> Stashed changes
       // Tab 3: Chat
       ChatPage(data: widget.data, trip: trip),
       // Tab 4: Profile
