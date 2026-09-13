@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../models/models.dart';
 import '../models/chat_planning_models.dart';
 import '../theme.dart';
@@ -9,20 +10,50 @@ import '../widgets/ai_prompt_modal.dart';
 class ChatPage extends StatefulWidget {
   final SocialData data;
   final TripData trip;
+  final Function(int)? onNavigateToTab;
 
   const ChatPage({
     super.key,
     required this.data,
     required this.trip,
+    this.onNavigateToTab,
   });
 
   @override
   State<ChatPage> createState() => _ChatPageState();
 }
 
+class FriendRequestItem {
+  final String id;
+  final String name;
+  final String avatarUrl;
+  final String avatarLetter;
+  final Color avatarColor;
+  final String bio;
+  final String destination;
+  final String time;
+  final String note;
+  final String mbti;
+
+  const FriendRequestItem({
+    required this.id,
+    required this.name,
+    required this.avatarUrl,
+    required this.avatarLetter,
+    required this.avatarColor,
+    required this.bio,
+    required this.destination,
+    required this.time,
+    required this.note,
+    required this.mbti,
+  });
+}
+
 class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
   late List<ChatConversation> conversations;
   late ChatConversation activeConversation;
+  late List<FriendRequestItem> _friendRequests;
+  bool _showFriendRequestsInline = true;
 
   final TextEditingController _msgInputController = TextEditingController();
   final ScrollController _chatScrollController = ScrollController();
@@ -42,6 +73,9 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
   // Itinerary update state
   bool isItineraryUpdating = false;
   bool showUpdatedBadge = false;
+
+  // Resizable boundary state between AI Notebook & Itinerary
+  double _notebookHeightRatio = 0.52;
 
   @override
   void initState() {
@@ -401,6 +435,46 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
     ];
 
     activeConversation = conversations.first;
+
+    // Initial Friend Requests List
+    _friendRequests = [
+      const FriendRequestItem(
+        id: 'fr_sophia',
+        name: 'Sophia Chen',
+        avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120',
+        avatarLetter: 'S',
+        avatarColor: Color(0xFFEC4899),
+        bio: 'Landscape Photographer • Nature Lover',
+        destination: 'Banff, Canada',
+        time: '12m ago',
+        note: 'Saw your Canadian Rockies trip! Day 1 coffee & hike looks amazing, would love to connect.',
+        mbti: 'ENFP',
+      ),
+      const FriendRequestItem(
+        id: 'fr_liam',
+        name: 'Liam Brooks',
+        avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120',
+        avatarLetter: 'L',
+        avatarColor: Color(0xFF3B82F6),
+        bio: 'Solo Hiker • Mountain Trail Enthusiast',
+        destination: 'Banff, Canada',
+        time: '2h ago',
+        note: 'Heading to Banff around the same dates in June. Let\'s sync plans!',
+        mbti: 'ISTP',
+      ),
+      const FriendRequestItem(
+        id: 'fr_elena',
+        name: 'Elena Rostova',
+        avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120',
+        avatarLetter: 'E',
+        avatarColor: Color(0xFF8B5CF6),
+        bio: 'Café Enthusiast • Cultural Explorer',
+        destination: 'Tokyo, Japan',
+        time: '1d ago',
+        note: 'Loved your Tokyo squad ideas! Would love to share tips.',
+        mbti: 'INFJ',
+      ),
+    ];
   }
 
   // ----------------------------------------------------
@@ -755,7 +829,7 @@ Avoid:
         final isTablet = constraints.maxWidth >= 700 && constraints.maxWidth < 960;
 
         return Scaffold(
-          backgroundColor: const Color(0xFFF8FAFC),
+          backgroundColor: tripzenBg,
           body: isDesktop
               ? _buildDesktopLayout()
               : isTablet
@@ -764,6 +838,15 @@ Avoid:
         );
       },
     );
+  }
+
+  void _openTripsFolder() {
+    if (Navigator.canPop(context)) {
+      Navigator.pop(context);
+    }
+    if (widget.onNavigateToTab != null) {
+      widget.onNavigateToTab!(1); // Navigate to Trips / My Itineraries tab
+    }
   }
 
   // ====================================================
@@ -786,20 +869,48 @@ Avoid:
         ),
         const VerticalDivider(width: 1, color: Color(0xFFE2E8F0)),
 
-        // Right Column: Top Notebook + Bottom Live Itinerary (380px)
+        // Right Column: Top AI Notebook + Bottom Live Itinerary (380px) with Resizable Divider
         SizedBox(
           width: 380,
           child: Column(
             children: [
-              // Top-Right: Notebook (Drop Target)
+              // Top-Right: AI Notebook (Drop Target)
               Expanded(
-                flex: 5,
+                flex: (_notebookHeightRatio * 100).round(),
                 child: _buildDesktopNotebookDropZone(),
               ),
-              const Divider(height: 1, color: Color(0xFFE2E8F0)),
+              
+              // Resizable Boundary Drag Handle
+              GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onVerticalDragUpdate: (details) {
+                  setState(() {
+                    _notebookHeightRatio += details.delta.dy / 600.0;
+                    _notebookHeightRatio = _notebookHeightRatio.clamp(0.2, 0.8);
+                  });
+                },
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.resizeUpDown,
+                  child: Container(
+                    height: 10,
+                    color: const Color(0xFFF1F5F9),
+                    child: Center(
+                      child: Container(
+                        width: 36,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFCBD5E1),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
               // Bottom-Right: Live Itinerary Panel
               Expanded(
-                flex: 4,
+                flex: ((1.0 - _notebookHeightRatio) * 100).round(),
                 child: _buildItineraryPanel(),
               ),
             ],
@@ -823,32 +934,32 @@ Avoid:
         SizedBox(
           width: 340,
           child: DefaultTabController(
-            length: 2,
-            child: Scaffold(
-              appBar: AppBar(
-                toolbarHeight: 48,
-                backgroundColor: Colors.white,
-                elevation: 0.5,
-                bottom: const TabBar(
-                  labelColor: coral,
-                  indicatorColor: coral,
-                  tabs: [
-                    Tab(text: '🪺 Travel Notebook'),
-                    Tab(text: '🗺 Live Itinerary'),
+              length: 2,
+              child: Scaffold(
+                appBar: AppBar(
+                  toolbarHeight: 48,
+                  backgroundColor: Colors.white,
+                  elevation: 0.5,
+                  bottom: const TabBar(
+                    labelColor: coral,
+                    indicatorColor: coral,
+                    tabs: [
+                      Tab(text: '🪺 Travel Notebook'),
+                      Tab(text: '🗺 Live Itinerary'),
+                    ],
+                  ),
+                ),
+                body: TabBarView(
+                  children: [
+                    _buildDesktopNotebookDropZone(),
+                    _buildItineraryPanel(),
                   ],
                 ),
               ),
-              body: TabBarView(
-                children: [
-                  _buildDesktopNotebookDropZone(),
-                  _buildItineraryPanel(),
-                ],
-              ),
             ),
           ),
-        ),
-      ],
-    );
+        ],
+      );
   }
 
   // ====================================================
@@ -857,10 +968,11 @@ Avoid:
   Widget _buildMobileLayout() {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0.5,
+        backgroundColor: tripzenCard,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(Icons.menu, color: Color(0xFF1E293B)),
+          icon: Icon(Icons.menu, color: tripzenDark),
           onPressed: _openMobileConversationsDrawer,
           tooltip: 'Conversations',
         ),
@@ -904,6 +1016,39 @@ Avoid:
           ],
         ),
         actions: [
+          // Friend Requests Button with Notification Badge
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.person_add_outlined, size: 21, color: Color(0xFF0F172A)),
+                onPressed: () => _showFriendRequestsSheet(context),
+                tooltip: 'Friend Requests',
+              ),
+              if (_friendRequests.isNotEmpty)
+                Positioned(
+                  right: 6,
+                  top: 6,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEF4444),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '${_friendRequests.length}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(width: 4),
+
           // ------------------------------------------------
           // MOBILE FLOATING NOTEBOOK DROP TARGET (🪺)
           // ------------------------------------------------
@@ -1060,6 +1205,461 @@ Avoid:
   }
 
   // ====================================================
+  // FRIEND REQUESTS LOGIC & UI
+  // ====================================================
+  void _acceptFriendRequest(FriendRequestItem req, {VoidCallback? onAction}) {
+    setState(() {
+      _friendRequests.removeWhere((r) => r.id == req.id);
+
+      final newConv = ChatConversation(
+        id: 'chat_${req.id}',
+        name: req.name,
+        destination: req.destination,
+        isGroup: false,
+        memberCount: 2,
+        lastMessage: 'Connected! Say hi to your new travel buddy.',
+        timestamp: 'Just now',
+        unreadCount: 0,
+        avatarLetter: req.avatarLetter,
+        avatarColor: req.avatarColor,
+        messages: [
+          ChatMessage(
+            id: 'msg_welcome_${DateTime.now().millisecondsSinceEpoch}',
+            senderName: req.name,
+            isMe: false,
+            text: req.note.isNotEmpty ? req.note : 'Hey there! Excited to connect and plan our trips together.',
+            timestamp: 'Just now',
+            category: MessageCategory.general,
+            categoryLabel: 'Introduction',
+            categoryIcon: '👋',
+          ),
+        ],
+        notebookItems: [],
+        itinerary: [],
+      );
+
+      conversations.insert(0, newConv);
+      activeConversation = newConv;
+    });
+
+    onAction?.call();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('🎉 Connected with ${req.name}! You can now chat together.'),
+        backgroundColor: const Color(0xFF0F172A),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _declineFriendRequest(FriendRequestItem req, {VoidCallback? onAction}) {
+    setState(() {
+      _friendRequests.removeWhere((r) => r.id == req.id);
+    });
+
+    onAction?.call();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Declined request from ${req.name}'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _showFriendRequestsSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) => Container(
+          height: MediaQuery.of(context).size.height * 0.72,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE2E8F0),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEFF6FF),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(Icons.person_add_rounded, size: 20, color: Color(0xFF2563EB)),
+                      ),
+                      const SizedBox(width: 10),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                'Friend Requests',
+                                style: GoogleFonts.inter(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w800,
+                                  color: const Color(0xFF0F172A),
+                                ),
+                              ),
+                              if (_friendRequests.isNotEmpty) ...[
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFEF4444),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    '${_friendRequests.length}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                          Text(
+                            '${_friendRequests.length} travel buddies want to connect',
+                            style: GoogleFonts.inter(fontSize: 11.5, color: const Color(0xFF64748B)),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Color(0xFF94A3B8)),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              const Divider(height: 1, color: Color(0xFFE2E8F0)),
+              const SizedBox(height: 12),
+              Expanded(
+                child: _friendRequests.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text('🎉', style: TextStyle(fontSize: 40)),
+                            const SizedBox(height: 12),
+                            Text(
+                              'No Pending Requests',
+                              style: GoogleFonts.inter(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF0F172A),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'You\'re all caught up with your travel connections!',
+                              style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748B)),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.separated(
+                        itemCount: _friendRequests.length,
+                        separatorBuilder: (context, index) => const SizedBox(height: 10),
+                        itemBuilder: (context, index) {
+                          final req = _friendRequests[index];
+                          return _buildFriendRequestCard(req, onAction: () {
+                            setSheetState(() {});
+                          });
+                        },
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFriendRequestsBanner() {
+    if (_friendRequests.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0FDF4),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFBBF7D0), width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF16A34A).withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Banner Header
+          InkWell(
+            onTap: () {
+              setState(() {
+                _showFriendRequestsInline = !_showFriendRequestsInline;
+              });
+            },
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(7),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDCFCE7),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.person_add_rounded,
+                      size: 16,
+                      color: Color(0xFF16A34A),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              'Friend Requests',
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                                color: const Color(0xFF0F172A),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFEF4444),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                '${_friendRequests.length}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 9.5,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          '${_friendRequests.length} pending travel connections',
+                          style: GoogleFonts.inter(
+                            fontSize: 10.5,
+                            color: const Color(0xFF64748B),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    _showFriendRequestsInline
+                        ? Icons.keyboard_arrow_up_rounded
+                        : Icons.keyboard_arrow_down_rounded,
+                    size: 20,
+                    color: const Color(0xFF64748B),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Collapsible Request Cards List
+          if (_showFriendRequestsInline) ...[
+            const Divider(height: 1, color: Color(0xFFDCFCE7)),
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(8),
+              itemCount: _friendRequests.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 8),
+              itemBuilder: (context, index) {
+                final req = _friendRequests[index];
+                return _buildFriendRequestCard(req);
+              },
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFriendRequestCard(FriendRequestItem req, {VoidCallback? onAction}) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                radius: 17,
+                backgroundImage: NetworkImage(req.avatarUrl),
+                backgroundColor: req.avatarColor,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          req.name,
+                          style: GoogleFonts.inter(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF0F172A),
+                          ),
+                        ),
+                        const SizedBox(width: 5),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            req.mbti,
+                            style: GoogleFonts.inter(
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF475569),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      '${req.destination} • ${req.time}',
+                      style: GoogleFonts.inter(
+                        fontSize: 10.5,
+                        color: const Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (req.note.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                '"${req.note}"',
+                style: GoogleFonts.inter(
+                  fontSize: 10.5,
+                  fontStyle: FontStyle.italic,
+                  color: const Color(0xFF475569),
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 30,
+                  child: FilledButton(
+                    onPressed: () => _acceptFriendRequest(req, onAction: onAction),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFF16A34A),
+                      padding: EdgeInsets.zero,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.check, size: 14),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Accept',
+                          style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w700),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              SizedBox(
+                height: 30,
+                child: OutlinedButton(
+                  onPressed: () => _declineFriendRequest(req, onAction: onAction),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF64748B),
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    side: const BorderSide(color: Color(0xFFCBD5E1)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: Text(
+                    'Decline',
+                    style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ====================================================
   // COMPONENT: Conversation List Panel
   // ====================================================
   Widget _buildConversationListPanel() {
@@ -1071,26 +1671,72 @@ Avoid:
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
+          // Header matching reference mockup
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 18, 16, 12),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
             child: Row(
               children: [
-                const Icon(Icons.chat_bubble_rounded, color: coral, size: 20),
-                const SizedBox(width: 8),
-                const Text(
-                  'Messages',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w900,
-                    fontSize: 18,
-                    color: Color(0xFF0F172A),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Travel Discussions',
+                        style: GoogleFonts.playfairDisplay(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          fontStyle: FontStyle.italic,
+                          color: const Color(0xFF0F172A),
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Plan together, share ideas and travel better.',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: const Color(0xFF64748B),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const Spacer(),
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.person_add_outlined, size: 20, color: Color(0xFF2563EB)),
+                      onPressed: () => _showFriendRequestsSheet(context),
+                      tooltip: 'Friend Requests',
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    if (_friendRequests.isNotEmpty)
+                      Positioned(
+                        right: 4,
+                        top: 4,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFEF4444),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Text(
+                            '${_friendRequests.length}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
                 IconButton(
-                  icon: const Icon(Icons.edit_square, size: 18, color: Colors.grey),
+                  icon: const Icon(Icons.edit_square, size: 18, color: Color(0xFF64748B)),
                   onPressed: () {},
-                  tooltip: 'New message',
+                  tooltip: 'New conversation',
                   visualDensity: VisualDensity.compact,
                 ),
               ],
@@ -1098,27 +1744,56 @@ Avoid:
           ),
           const Divider(height: 1, color: Color(0xFFE2E8F0)),
 
+          // Search Bar matching reference mockup
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: 'Search chats...',
+                hintStyle: GoogleFonts.inter(fontSize: 12.5, color: const Color(0xFF94A3B8)),
+                prefixIcon: const Icon(Icons.search, size: 18, color: Color(0xFF94A3B8)),
+                filled: true,
+                fillColor: const Color(0xFFF8FAFC),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  borderSide: const BorderSide(color: Color(0xFF819EE5)),
+                ),
+              ),
+            ),
+          ),
+
           // List Items
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              padding: const EdgeInsets.symmetric(vertical: 4),
               children: [
+                // FRIEND REQUESTS INLINE BANNER
+                if (_friendRequests.isNotEmpty) ...[
+                  _buildFriendRequestsBanner(),
+                  const SizedBox(height: 4),
+                ],
+
                 // DIRECT CHATS SECTION
                 const Padding(
                   padding: EdgeInsets.fromLTRB(16, 10, 16, 6),
                   child: Text(
                     'DIRECT CHATS',
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 10.5,
                       fontWeight: FontWeight.w800,
-                      color: Color(0xFF64748B),
+                      color: Color(0xFF94A3B8),
                       letterSpacing: 0.6,
                     ),
                   ),
                 ),
                 ...directChats.map((conv) => _buildConversationTile(conv)),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
 
                 // GROUP CHATROOMS SECTION
                 const Padding(
@@ -1126,9 +1801,9 @@ Avoid:
                   child: Text(
                     'GROUP CHATROOMS',
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 10.5,
                       fontWeight: FontWeight.w800,
-                      color: Color(0xFF64748B),
+                      color: Color(0xFF94A3B8),
                       letterSpacing: 0.6,
                     ),
                   ),
@@ -1147,11 +1822,12 @@ Avoid:
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: isSelected ? coral.withValues(alpha: 0.08) : Colors.transparent,
-        borderRadius: BorderRadius.circular(10),
-        border: isSelected ? Border.all(color: coral.withValues(alpha: 0.25)) : null,
+        color: isSelected ? const Color(0xFFF1F5F9) : Colors.transparent,
+        borderRadius: BorderRadius.circular(14),
+        border: isSelected ? Border.all(color: const Color(0xFFCBD5E1), width: 1.0) : null,
       ),
       child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
         onTap: () {
           setState(() {
             activeConversation = conv;
@@ -1161,12 +1837,13 @@ Avoid:
         },
         leading: CircleAvatar(
           backgroundColor: conv.avatarColor.withValues(alpha: 0.18),
+          radius: 19,
           child: Text(
             conv.avatarLetter,
             style: TextStyle(
               color: conv.avatarColor,
               fontWeight: FontWeight.w800,
-              fontSize: 16,
+              fontSize: 15,
             ),
           ),
         ),
@@ -1177,7 +1854,7 @@ Avoid:
                 conv.name,
                 style: TextStyle(
                   fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
-                  fontSize: 14,
+                  fontSize: 13.5,
                   color: const Color(0xFF0F172A),
                 ),
                 overflow: TextOverflow.ellipsis,
@@ -1187,7 +1864,7 @@ Avoid:
               conv.timestamp,
               style: TextStyle(
                 fontSize: 11,
-                color: isSelected ? coral : Colors.grey.shade500,
+                color: isSelected ? const Color(0xFF475569) : Colors.grey.shade500,
               ),
             ),
           ],
@@ -1203,7 +1880,7 @@ Avoid:
                     conv.destination,
                     style: const TextStyle(
                       fontSize: 11,
-                      color: Color(0xFF475569),
+                      color: Color(0xFF64748B),
                       fontWeight: FontWeight.w600,
                     ),
                     overflow: TextOverflow.ellipsis,
@@ -1211,9 +1888,16 @@ Avoid:
                 ),
                 if (conv.isGroup) ...[
                   const SizedBox(width: 4),
-                  Text(
-                    '· 👥 ${conv.memberCount}',
-                    style: TextStyle(fontSize: 10.5, color: Colors.grey.shade600),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.people_outline_rounded, size: 12, color: Color(0xFF64748B)),
+                      const SizedBox(width: 2),
+                      Text(
+                        '${conv.memberCount}',
+                        style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+                      ),
+                    ],
                   ),
                 ],
               ],
@@ -1224,7 +1908,7 @@ Avoid:
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 11.5,
                 color: Colors.grey.shade600,
               ),
             ),
@@ -1232,18 +1916,11 @@ Avoid:
         ),
         trailing: conv.unreadCount > 0
             ? Container(
-                padding: const EdgeInsets.all(5),
+                width: 7,
+                height: 7,
                 decoration: const BoxDecoration(
-                  color: coral,
+                  color: Color(0xFF0F172A),
                   shape: BoxShape.circle,
-                ),
-                child: Text(
-                  '${conv.unreadCount}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
                 ),
               )
             : null,
@@ -1294,28 +1971,30 @@ Avoid:
                             ),
                           ),
                           if (activeConversation.isGroup) ...[
-                            const SizedBox(width: 6),
+                            const SizedBox(width: 8),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
-                                color: coral.withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(10),
+                                color: const Color(0xFFF1F5F9),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: const Color(0xFFCBD5E1)),
                               ),
                               child: Text(
                                 '👥 ${activeConversation.memberCount} travellers',
                                 style: const TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w700,
-                                  color: coral,
+                                  color: Color(0xFF475569),
                                 ),
                               ),
                             ),
                           ],
                         ],
                       ),
+                      const SizedBox(height: 2),
                       Text(
-                        '${activeConversation.destination} · Collaborative Planning Room',
-                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                        '${activeConversation.destination} • Collaborative Planning Room',
+                        style: GoogleFonts.inter(fontSize: 11.5, color: const Color(0xFF64748B)),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
@@ -1332,21 +2011,21 @@ Avoid:
                   },
                   icon: Icon(
                     isSelectionMode ? Icons.check_box : Icons.check_box_outline_blank,
-                    size: 16,
-                    color: isSelectionMode ? coral : Colors.grey.shade700,
+                    size: 15,
+                    color: const Color(0xFF475569),
                   ),
                   label: Text(
                     isSelectionMode ? 'Cancel Selection' : 'Select Messages',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       fontSize: 12,
-                      color: isSelectionMode ? coral : Colors.grey.shade800,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF475569),
                     ),
                   ),
                   style: OutlinedButton.styleFrom(
-                    side: BorderSide(
-                      color: isSelectionMode ? coral : Colors.grey.shade300,
-                    ),
-                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    side: const BorderSide(color: Color(0xFFCBD5E1)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                   ),
                 ),
               ],
@@ -1358,21 +2037,19 @@ Avoid:
         // Selection Action Banner (Desktop)
         if (isSelectionMode) _buildSelectionActionBar(),
 
-        // Informational Hint
+        // Informational Hint matching reference mockup
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           color: const Color(0xFFF1F5F9),
           child: Row(
             children: [
-              const Text('💡', style: TextStyle(fontSize: 12)),
-              const SizedBox(width: 6),
+              const Text('💡', style: TextStyle(fontSize: 13)),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  isMobile
-                      ? 'Tip: Tap or long-press to select a bunch, or drag to 🪺 to save.'
-                      : 'Tip: Long press or drag single or bunches of conversations into the Travel Notebook.',
-                  style: TextStyle(fontSize: 11.5, color: Colors.grey.shade700),
+                  'Tip: Long press or drag messages into the Travel Notebook to save key ideas, places, or decisions.',
+                  style: GoogleFonts.inter(fontSize: 11.5, color: const Color(0xFF475569), fontWeight: FontWeight.w500),
                 ),
               ),
             ],
@@ -1728,26 +2405,19 @@ Avoid:
       },
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 4),
-        constraints: const BoxConstraints(maxWidth: 420),
+        constraints: const BoxConstraints(maxWidth: 440),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: msg.isMe ? coral : Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(16),
-            topRight: const Radius.circular(16),
-            bottomLeft: Radius.circular(msg.isMe ? 16 : 4),
-            bottomRight: Radius.circular(msg.isMe ? 4 : 16),
-          ),
+          color: msg.isMe ? const Color(0xFFEFF6FF) : Colors.white,
+          borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: isSelected
-                ? coral
-                : (msg.isSavedToNotebook ? const Color(0xFFFED7AA) : const Color(0xFFE2E8F0)),
-            width: isSelected ? 2.0 : 1.0,
+            color: isSelected ? coral : const Color(0xFFE2E8F0),
+            width: isSelected ? 2.0 : 1.2,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 4,
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 6,
               offset: const Offset(0, 2),
             ),
           ],
@@ -1756,84 +2426,75 @@ Avoid:
           crossAxisAlignment:
               msg.isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
           children: [
-            // Sender name & category tag
-            if (!msg.isMe)
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    msg.senderName,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                      color: Color(0xFF0F172A),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      '${msg.categoryIcon} ${msg.categoryLabel}',
-                      style: const TextStyle(
-                        fontSize: 9.5,
-                        color: Color(0xFF475569),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
+            // Sender name (Category badge removed per design)
+            if (!msg.isMe) ...[
+              Text(
+                msg.senderName,
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 13,
+                  color: const Color(0xFF0F172A),
+                ),
               ),
-            if (!msg.isMe) const SizedBox(height: 4),
+              const SizedBox(height: 4),
+            ],
 
             // Message text
             Text(
               msg.text,
-              style: TextStyle(
-                fontSize: 14,
-                color: msg.isMe ? Colors.white : const Color(0xFF1E293B),
+              style: GoogleFonts.inter(
+                fontSize: 13.5,
+                color: const Color(0xFF0F172A),
                 height: 1.35,
+                fontWeight: FontWeight.w500,
               ),
             ),
 
-            const SizedBox(height: 4),
+            const SizedBox(height: 5),
 
-            // Timestamp & Saved badge
+            // Timestamp & Save to Notebook Action
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   msg.timestamp,
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: msg.isMe ? Colors.white70 : Colors.grey.shade500,
+                  style: GoogleFonts.inter(
+                    fontSize: 10.5,
+                    color: const Color(0xFF94A3B8),
                   ),
                 ),
-                if (msg.isSavedToNotebook) ...[
-                  const SizedBox(width: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                    decoration: BoxDecoration(
-                      color: msg.isMe ? Colors.white24 : const Color(0xFFFFF7ED),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text('🪺', style: TextStyle(fontSize: 10)),
-                        const SizedBox(width: 3),
-                        Text(
-                          'Saved',
-                          style: TextStyle(
-                            fontSize: 9.5,
-                            fontWeight: FontWeight.w700,
-                            color: msg.isMe ? Colors.white : const Color(0xFFC2410C),
+                if (!msg.isMe) ...[
+                  const SizedBox(width: 8),
+                  InkWell(
+                    onTap: () => _savePayloadToNotebook(ChatDragPayload.single(msg)),
+                    borderRadius: BorderRadius.circular(6),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            msg.isSavedToNotebook
+                                ? Icons.bookmark_rounded
+                                : Icons.bookmark_outline_rounded,
+                            size: 14,
+                            color: msg.isSavedToNotebook
+                                ? const Color(0xFFC2410C)
+                                : const Color(0xFF64748B),
                           ),
-                        ),
-                      ],
+                          if (!msg.isSavedToNotebook) ...[
+                            const SizedBox(width: 3),
+                            Text(
+                              'Save to Notebook',
+                              style: GoogleFonts.inter(
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF64748B),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -1853,44 +2514,85 @@ Avoid:
       child: bubbleContent,
     );
 
-    // Row layout with checkbox if selection mode is on
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        mainAxisAlignment:
-            msg.isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          if (isSelectionMode && !msg.isMe)
-            Checkbox(
-              value: isSelected,
-              activeColor: coral,
-              onChanged: (val) {
-                setState(() {
-                  if (val == true) {
-                    selectedMessageIds.add(msg.id);
-                  } else {
-                    selectedMessageIds.remove(msg.id);
-                  }
-                });
-              },
-            ),
-          draggableRow,
-          if (isSelectionMode && msg.isMe)
-            Checkbox(
-              value: isSelected,
-              activeColor: coral,
-              onChanged: (val) {
-                setState(() {
-                  if (val == true) {
-                    selectedMessageIds.add(msg.id);
-                  } else {
-                    selectedMessageIds.remove(msg.id);
-                  }
-                });
-              },
-            ),
-        ],
+    // Row layout with flush left/right alignment logic
+    return Align(
+      alignment: msg.isMe ? Alignment.centerRight : Alignment.centerLeft,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 3),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: msg.isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (isSelectionMode && !msg.isMe)
+              Checkbox(
+                value: isSelected,
+                activeColor: coral,
+                onChanged: (val) {
+                  setState(() {
+                    if (val == true) {
+                      selectedMessageIds.add(msg.id);
+                    } else {
+                      selectedMessageIds.remove(msg.id);
+                    }
+                  });
+                },
+              ),
+            if (!msg.isMe) ...[
+              CircleAvatar(
+                radius: 15,
+                backgroundColor: msg.senderName == 'Maya'
+                    ? const Color(0xFFD1FAE5)
+                    : msg.senderName == 'Daniel'
+                        ? const Color(0xFFDBEAFE)
+                        : const Color(0xFFFEE2E2),
+                child: Text(
+                  msg.senderName.substring(0, 1),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: msg.senderName == 'Maya'
+                        ? const Color(0xFF047857)
+                        : msg.senderName == 'Daniel'
+                            ? const Color(0xFF1D4ED8)
+                            : const Color(0xFFB91C1C),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+            ],
+            Flexible(child: draggableRow),
+            if (msg.isMe) ...[
+              const SizedBox(width: 8),
+              const CircleAvatar(
+                radius: 15,
+                backgroundColor: Color(0xFF0F172A),
+                child: Text(
+                  'Y',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+            if (isSelectionMode && msg.isMe)
+              Checkbox(
+                value: isSelected,
+                activeColor: coral,
+                onChanged: (val) {
+                  setState(() {
+                    if (val == true) {
+                      selectedMessageIds.add(msg.id);
+                    } else {
+                      selectedMessageIds.remove(msg.id);
+                    }
+                  });
+                },
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -2027,49 +2729,60 @@ Avoid:
   // ====================================================
   Widget _buildMessageInputBar() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(14, 8, 14, 12),
-      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
+      ),
       child: SafeArea(
         top: false,
         child: Row(
           children: [
-            IconButton(
-              icon: const Icon(Icons.add_photo_alternate_outlined, color: Colors.grey),
-              onPressed: () {},
-              tooltip: 'Attach photo or location',
+            Container(
+              decoration: const BoxDecoration(
+                color: Color(0xFFF1F5F9),
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.add, color: Color(0xFF475569), size: 20),
+                onPressed: () {},
+                tooltip: 'Attach options',
+                visualDensity: VisualDensity.compact,
+              ),
             ),
+            const SizedBox(width: 10),
             Expanded(
               child: TextField(
                 controller: _msgInputController,
                 focusNode: _msgFocusNode,
                 decoration: InputDecoration(
-                  hintText: 'Type a message... (Long press message to save to Notebook)',
-                  hintStyle: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+                  hintText: 'Type a message... (Long press to save to Notebook)',
+                  hintStyle: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF94A3B8)),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
+                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
+                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
-                    borderSide: const BorderSide(color: coral, width: 1.5),
+                    borderSide: const BorderSide(color: Color(0xFF0F172A), width: 1.5),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                   filled: true,
                   fillColor: const Color(0xFFF8FAFC),
                 ),
                 onSubmitted: (_) => _sendMessage(),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 10),
             CircleAvatar(
-              backgroundColor: coral,
-              radius: 20,
+              backgroundColor: const Color(0xFF0F172A),
+              radius: 21,
               child: IconButton(
-                icon: const Icon(Icons.send_rounded, color: Colors.white, size: 18),
+                icon: const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 18),
                 onPressed: _sendMessage,
                 tooltip: 'Send message',
               ),
@@ -2122,21 +2835,21 @@ Avoid:
           ),
           child: Column(
             children: [
-              // Notebook Header
+              // Notebook Header matching reference mockup
               Container(
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
                 color: Colors.white,
                 child: Row(
                   children: [
-                    const Text('🪺', style: TextStyle(fontSize: 20)),
+                    const Icon(Icons.collections_bookmark_rounded, color: Color(0xFF0F172A), size: 18),
                     const SizedBox(width: 8),
-                    const Expanded(
+                    Expanded(
                       child: Text(
-                        'TRAVEL NOTEBOOK',
-                        style: TextStyle(
+                        'AI NOTEBOOK',
+                        style: GoogleFonts.inter(
                           fontWeight: FontWeight.w900,
-                          fontSize: 14,
-                          color: Color(0xFF0F172A),
+                          fontSize: 13,
+                          color: const Color(0xFF0F172A),
                           letterSpacing: 0.5,
                         ),
                         overflow: TextOverflow.ellipsis,
@@ -2150,10 +2863,10 @@ Avoid:
                       ),
                       child: Text(
                         '${activeConversation.notebookItems.length} decisions',
-                        style: const TextStyle(
+                        style: GoogleFonts.inter(
                           fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF475569),
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF475569),
                         ),
                       ),
                     ),
@@ -2176,8 +2889,8 @@ Avoid:
                         Expanded(
                           child: Text(
                             isBunch
-                                ? 'Release to nest bunch of $count conversations in Notebook! 🪺'
-                                : 'Release to nest this decision in Notebook! 🪺',
+                                ? 'Release to nest bunch of $count conversations in AI Notebook! 🪺'
+                                : 'Release to nest this decision in AI Notebook! 🪺',
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 12,
@@ -2191,7 +2904,7 @@ Avoid:
                   ),
                 ),
 
-              // Notebook Items & Planning Check
+              // Planning Check
               Expanded(
                 child: ListView(
                   padding: const EdgeInsets.all(14),
@@ -2202,50 +2915,6 @@ Avoid:
                       onDiscussTopic: _onDiscussMissingTopic,
                       onGenerateItinerary: _openAiPromptModal,
                     ),
-
-                    const SizedBox(height: 14),
-
-                    // Saved Decisions Header
-                    const Text(
-                      'Saved Group Decisions',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 13,
-                        color: Color(0xFF1E293B),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-
-                    if (activeConversation.notebookItems.isEmpty)
-                      Container(
-                        padding: const EdgeInsets.all(24),
-                        alignment: Alignment.center,
-                        child: Column(
-                          children: [
-                            const Text('🪺', style: TextStyle(fontSize: 32)),
-                            const SizedBox(height: 8),
-                            const Text(
-                              'Your travel ideas will nest here.',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13,
-                                color: Color(0xFF0F172A),
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Drag single messages or a selected bunch into Notebook.',
-                              style: TextStyle(
-                                fontSize: 11.5,
-                                color: Colors.grey.shade600,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      )
-                    else
-                      ...activeConversation.notebookItems.map((item) => _buildNotebookItemCard(item)),
                   ],
                 ),
               ),
@@ -2256,6 +2925,7 @@ Avoid:
     );
   }
 
+  // ignore: unused_element
   Widget _buildNotebookItemCard(NotebookItem item) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -2339,27 +3009,56 @@ Avoid:
         children: [
           // Itinerary Header
           Container(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
+            padding: const EdgeInsets.fromLTRB(16, 12, 14, 10),
             color: Colors.white,
             child: Row(
               children: [
-                const Icon(Icons.map_rounded, color: Color(0xFF0B2240), size: 18),
+                const Icon(Icons.map_rounded, color: Color(0xFF0F172A), size: 18),
                 const SizedBox(width: 8),
-                const Expanded(
+                Expanded(
                   child: Text(
                     'LIVE ITINERARY',
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       fontWeight: FontWeight.w900,
                       fontSize: 13,
-                      color: Color(0xFF0B2240),
+                      color: const Color(0xFF0F172A),
                       letterSpacing: 0.5,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
+                // Header Shortcut: Direct to Trips Folder
+                InkWell(
+                  onTap: _openTripsFolder,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEFF6FF),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFBFDBFE)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.folder_open_rounded, size: 13, color: Color(0xFF2563EB)),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Trips Folder',
+                          style: GoogleFonts.inter(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF1D4ED8),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
                 if (showUpdatedBadge)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
                       color: const Color(0xFFDCFCE7),
                       borderRadius: BorderRadius.circular(10),
@@ -2375,9 +3074,20 @@ Avoid:
                     ),
                   )
                 else
-                  Text(
-                    '${activeConversation.itinerary.length} Days Planned',
-                    style: const TextStyle(fontSize: 11, color: Colors.grey),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${activeConversation.itinerary.length} Days',
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF475569),
+                      ),
+                    ),
                   ),
               ],
             ),
@@ -2414,6 +3124,32 @@ Avoid:
                       return _buildItineraryDayCard(day);
                     },
                   ),
+          ),
+
+          // Bottom Action Button: Go To Trips Folder
+          Container(
+            padding: const EdgeInsets.fromLTRB(14, 8, 14, 10),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
+            ),
+            child: SizedBox(
+              width: double.infinity,
+              height: 38,
+              child: FilledButton.icon(
+                onPressed: _openTripsFolder,
+                icon: const Icon(Icons.folder_shared_outlined, size: 16),
+                label: Text(
+                  'Open in Trips Folder',
+                  style: GoogleFonts.inter(fontSize: 12.5, fontWeight: FontWeight.w700),
+                ),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF0F172A),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ),
           ),
         ],
       ),

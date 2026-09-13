@@ -221,7 +221,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Now navigated to PersonalPassScreen showing the Travel ID Badge!
-    expect(find.text('OFFICIAL TRAVEL PASS'), findsOneWidget);
+    expect(find.text('YOUR TRAVEL CREDENTIALS'), findsOneWidget);
     expect(find.byType(TravelIdBadge), findsOneWidget);
     expect(find.text('THE'), findsOneWidget);
     expect(find.text('EXPLORER'), findsOneWidget);
@@ -502,23 +502,15 @@ void main() {
     await tester.tap(find.byIcon(Icons.close));
     await tester.pumpAndSettle();
 
-    // 3. AI Assistant Panel suggestions
-    expect(find.text('TripNest AI Assistant'), findsOneWidget);
-    expect(find.text('PLANNING CHECK'), findsOneWidget);
-    expect(find.text('Move Day 2 Start to 10:30 AM'), findsOneWidget);
+    // 3. Verify AI Assistant panel was removed from desktop timeline (Picture 1 requirement)
+    expect(find.text('ITINERARY VERSION'), findsNothing);
+    expect(find.text('PLANNING CHECK'), findsNothing);
 
-    // Apply AI suggestion (Move Day 2 start to 10:30 AM)
-    await tester.tap(find.text('Apply Change').first);
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 700));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Itinerary Updated! "Move Day 2 Start to 10:30 AM" applied.'), findsOneWidget);
-
-    // Switch to Day 2 and verify time shifted to 10:30
+    // Switch to Day 2 and verify Day 2 timeline updates
     await tester.tap(find.text('Day 2'));
     await tester.pumpAndSettle();
-    expect(find.text('10:30'), findsWidgets);
+    expect(find.text('DAY 2'), findsOneWidget);
+    expect(find.text('TeamLab Borderless & Modern Tokyo'), findsOneWidget);
 
     // 4. Test Chatroom Connection
     await tester.tap(find.text('Chat: Tokyo Squad'));
@@ -546,8 +538,8 @@ void main() {
     final staticMapUrl = GoogleMapsService.getStaticMapUrl(stops: day1Stops, mapType: 'roadmap');
     expect(staticMapUrl, contains('AIzaSyAKFFCfV1F2nh5CePtaRJFR7QaS-F5IMbw'));
     expect(staticMapUrl, contains('maptype=roadmap'));
-    expect(staticMapUrl, contains('markers=color:0xFB7185'));
-    expect(staticMapUrl, contains('path=color:0xFB7185ee'));
+    expect(staticMapUrl, contains('markers=color:0x10B981'));
+    expect(staticMapUrl, contains('path=color:0x10B981'));
 
     final directionsUrl = GoogleMapsService.getFullDayDirectionsUrl(day1Stops);
     expect(directionsUrl, contains('https://www.google.com/maps/dir/'));
@@ -599,6 +591,46 @@ void main() {
     await tester.tap(find.text('View on Google Maps'));
     await tester.pumpAndSettle();
     expect(find.textContaining('Opening Google Maps URL'), findsOneWidget);
+  });
+
+  testWidgets('InteractiveItineraryMap: zoom-adaptive pins and single-glance location details card', (tester) async {
+    final trips = TripRepository.getDemoTrips();
+    final tokyoTrip = trips.first;
+    final day1Stops = tokyoTrip.days.first.stops;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 800,
+            height: 600,
+            child: InteractiveItineraryMap(
+              stops: day1Stops,
+              dayTitle: 'Shibuya & Harajuku Culture',
+              currentDayNumber: 1,
+              selectedStopIndex: 0,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Verify location bubble on map with compact single-glance info
+    expect(find.text('Blue Bottle Coffee Shibuya'), findsWidgets);
+    expect(find.text('View on Google Maps'), findsOneWidget);
+    expect(find.text('Directions'), findsOneWidget);
+    expect(find.text('Café'), findsWidgets);
+    expect(find.text('About'), findsOneWidget);
+    expect(find.text('Reviews'), findsOneWidget);
+    expect(find.text('Photos'), findsOneWidget);
+
+    // Verify static map url generator supports marker size
+    final staticUrlSmall = GoogleMapsService.getStaticMapUrl(
+      stops: day1Stops,
+      markerSize: 'small',
+    );
+    expect(staticUrlSmall, contains('size:small'));
   });
 }
 

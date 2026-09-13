@@ -1,7 +1,6 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../models/models.dart';
-import '../theme.dart';
 import 'home_feed.dart';
 import 'itinerary_page.dart';
 import 'pairing_page.dart';
@@ -13,28 +12,51 @@ import 'trips_page.dart';
 class HomeShell extends StatefulWidget {
   final SocialData data;
   const HomeShell({super.key, required this.data});
-  
+
   @override
   State<HomeShell> createState() => _HomeShellState();
 }
 
-class _HomeShellState extends State<HomeShell> {
+class _HomeShellState extends State<HomeShell> with TickerProviderStateMixin {
   int selected = 0;
   bool tripDetailOpen = false;
   bool tripsListOpen = false;
   final trip = TripData();
 
+  late List<AnimationController> _tabControllers;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabControllers = List.generate(
+      5,
+      (_) => AnimationController(
+        vsync: this,
+        duration: const Duration(milliseconds: 130),
+        lowerBound: 0.88,
+        upperBound: 1.0,
+        value: 1.0,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    for (final c in _tabControllers) { c.dispose(); }
+    super.dispose();
+  }
+
   void openTrip() => setState(() {
-    selected = 0;
-    tripDetailOpen = true;
-    tripsListOpen = false;
-  });
+        selected = 0;
+        tripDetailOpen = true;
+        tripsListOpen = false;
+      });
 
   void openTripsList() => setState(() {
-    selected = 0;
-    tripDetailOpen = false;
-    tripsListOpen = true;
-  });
+        selected = 0;
+        tripDetailOpen = false;
+        tripsListOpen = true;
+      });
 
   void createTrip(String name, String destination) {
     setState(() {
@@ -46,7 +68,11 @@ class _HomeShellState extends State<HomeShell> {
     });
   }
 
-  void _onTabSelected(int index) {
+  void _onTabSelected(int index) async {
+    final c = _tabControllers[index];
+    c.reverse();
+    await Future.delayed(const Duration(milliseconds: 80));
+    c.forward();
     setState(() {
       selected = index;
       if (index == 0) {
@@ -59,7 +85,6 @@ class _HomeShellState extends State<HomeShell> {
   @override
   Widget build(BuildContext context) {
     final pages = [
-      // Tab 0: Home
       tripDetailOpen
           ? TripScreen(
               trip: trip,
@@ -67,76 +92,180 @@ class _HomeShellState extends State<HomeShell> {
               onBack: () => setState(() => tripDetailOpen = false),
             )
           : tripsListOpen
-          ? TripsPage(trip: trip, onOpenTrip: openTrip)
-          : HomeFeed(trip: trip, onOpenTrip: openTrip, onSeeAll: openTripsList),
-      // Tab 1: Itinerary
+              ? TripsPage(trip: trip, onOpenTrip: openTrip)
+              : HomeFeed(
+                  trip: trip,
+                  data: widget.data,
+                  onOpenTrip: openTrip,
+                  onSeeAll: openTripsList,
+                  onNavigateToTab: (idx) => _onTabSelected(idx),
+                ),
       ItineraryPage(
         trip: trip,
         data: widget.data,
         onOpenTrip: openTrip,
-        onNavigateToChat: (chatId) {
-          setState(() {
-            selected = 3; // Switch directly to Chat tab!
-          });
-        },
+        onNavigateToChat: (chatId) => setState(() => selected = 3),
       ),
-      // Tab 2: Pairing
       PairingPage(
         data: widget.data,
         trip: trip,
         onNavigateToChat: () => _onTabSelected(3),
       ),
-      // Tab 3: Chat
-      ChatPage(data: widget.data, trip: trip),
-      // Tab 4: Profile
+      ChatPage(
+        data: widget.data,
+        trip: trip,
+        onNavigateToTab: (idx) => _onTabSelected(idx),
+      ),
       ProfilePage(data: widget.data, trip: trip, onChanged: () => setState(() {})),
     ];
 
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
-      extendBody: true,
-      body: IndexedStack(
-        index: selected,
-        children: pages,
-      ),
-      // =======================================================================
-      // FLOATING ICE-BLUE LIGHT PILL NAVIGATION BAR (REF MOCKUP STYLE)
-      // =======================================================================
-      bottomNavigationBar: Container(
-        margin: EdgeInsets.fromLTRB(16, 0, 16, bottomPadding > 0 ? bottomPadding + 4 : 16),
-        height: 64,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(36),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.92), // Light translucent pill
-                borderRadius: BorderRadius.circular(36),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.8),
-                  width: 1.5,
+      backgroundColor: const Color(0xFFE8F4FD),
+      extendBody: selected != 3,
+      body: IndexedStack(index: selected, children: pages),
+      // =====================================================================
+      // FLOATING PILL NAVIGATION BAR WITH ELEVATED PAIR BUTTON
+      // Matched precisely to design: soft ice-pill active tabs & protruding Pair compass
+      // =====================================================================
+      bottomNavigationBar: Padding(
+        padding: EdgeInsets.fromLTRB(16, 0, 16, bottomPadding > 0 ? bottomPadding + 6 : 16),
+        child: SizedBox(
+          height: 76,
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.bottomCenter,
+            children: [
+              // 1. The Main Capsule Bar
+              Container(
+                height: 66,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(34),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF192338).withValues(alpha: 0.07),
+                      blurRadius: 20,
+                      offset: const Offset(0, 4),
+                      spreadRadius: 0,
+                    ),
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 6,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF0F172A).withValues(alpha: 0.12),
-                    blurRadius: 24,
-                    offset: const Offset(0, 8),
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _buildNavTab(
+                        0,
+                        Icons.home_rounded,
+                        Icons.home_outlined,
+                        'Home',
+                      ),
+                    ),
+                    Expanded(
+                      child: _buildNavTab(
+                        1,
+                        Icons.calendar_month_rounded,
+                        Icons.calendar_month_outlined,
+                        'Trips',
+                      ),
+                    ),
+                    // Centered gap for the elevated Pair button
+                    const SizedBox(width: 64),
+                    Expanded(
+                      child: _buildNavTab(
+                        3,
+                        Icons.chat_bubble_rounded,
+                        Icons.chat_bubble_outline_rounded,
+                        'Chat',
+                      ),
+                    ),
+                    Expanded(
+                      child: _buildNavTab(
+                        4,
+                        Icons.person_rounded,
+                        Icons.person_outline_rounded,
+                        'Me',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // 2. The Floating Elevated Center "Pair" Button
+              Positioned(
+                bottom: 6,
+                child: _buildCenterPairTab(),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavTab(int index, IconData activeIcon, IconData inactiveIcon, String label) {
+    final isActive = selected == index;
+
+    return ScaleTransition(
+      scale: _tabControllers[index],
+      child: GestureDetector(
+        onTap: () => _onTabSelected(index),
+        behavior: HitTestBehavior.opaque,
+        child: Center(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOutCubic,
+            width: isActive ? 66 : 58,
+            height: 56,
+            decoration: BoxDecoration(
+              color: isActive ? const Color(0xFFF1F6FB) : Colors.transparent,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (isActive)
+                  Container(
+                    width: 34,
+                    height: 30,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF192338),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      activeIcon,
+                      color: Colors.white,
+                      size: 19,
+                    ),
+                  )
+                else
+                  SizedBox(
+                    height: 30,
+                    child: Center(
+                      child: Icon(
+                        inactiveIcon,
+                        color: const Color(0xFF7E8E9F),
+                        size: 23,
+                      ),
+                    ),
                   ),
-                ],
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildFloatingTab(0, Icons.home_rounded, 'Home'),
-                  _buildFloatingTab(1, Icons.calendar_today_rounded, 'Itinerary'),
-                  _buildFloatingTab(2, Icons.swap_horiz_rounded, 'Pairing'),
-                  _buildFloatingTab(3, Icons.chat_bubble_rounded, 'Chat'),
-                  _buildFloatingTab(4, Icons.person_rounded, 'Profile'),
-                ],
-              ),
+                const SizedBox(height: 3),
+                Text(
+                  label,
+                  style: GoogleFonts.inter(
+                    fontSize: 11.5,
+                    fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                    color: isActive ? const Color(0xFF192338) : const Color(0xFF7E8E9F),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -144,48 +273,62 @@ class _HomeShellState extends State<HomeShell> {
     );
   }
 
-  Widget _buildFloatingTab(int index, IconData icon, String label) {
-    final isSelected = selected == index;
+  Widget _buildCenterPairTab() {
+    final isSelected = selected == 2;
 
-    return GestureDetector(
-      onTap: () => _onTabSelected(index),
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        padding: isSelected
-            ? const EdgeInsets.symmetric(horizontal: 14, vertical: 8)
-            : const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: isSelected ? darkSlate : Colors.transparent,
-          borderRadius: BorderRadius.circular(28),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: darkSlate.withValues(alpha: 0.3),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : null,
-        ),
-        child: Row(
+    return ScaleTransition(
+      scale: _tabControllers[2],
+      child: GestureDetector(
+        onTap: () => _onTabSelected(2),
+        behavior: HitTestBehavior.opaque,
+        child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              color: isSelected ? Colors.white : darkSlate.withValues(alpha: 0.75),
-              size: 20,
+            Container(
+              width: 52,
+              height: 52,
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF192338).withValues(alpha: 0.10),
+                    blurRadius: 10,
+                    offset: const Offset(0, -2),
+                  ),
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF192338),
+                  shape: BoxShape.circle,
+                  border: isSelected
+                      ? Border.all(color: const Color(0xFF3B82F6), width: 2)
+                      : null,
+                ),
+                child: const Center(
+                  child: Icon(
+                    Icons.explore,
+                    color: Colors.white,
+                    size: 25,
+                  ),
+                ),
+              ),
             ),
-            const SizedBox(width: 4),
+            const SizedBox(height: 3),
             Text(
-              label,
-              style: isSelected
-                  ? boldItalicTitle(12, color: Colors.white)
-                  : TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: darkSlate.withValues(alpha: 0.75),
-                    ),
+              'Pair',
+              style: GoogleFonts.inter(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF192338),
+              ),
             ),
           ],
         ),
@@ -193,4 +336,3 @@ class _HomeShellState extends State<HomeShell> {
     );
   }
 }
-
