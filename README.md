@@ -486,3 +486,108 @@ The following were deliberately dropped from TripNest's core scope. They are not
 | **Days 13–14** | Integration + Polish + Demo | End-to-end testing, prototype TravelID flow, UI polish, demo script |
 
 Some components (notably TravelID verification and the Gemini itinerary assistant) are intentionally **prototype implementations** — they demonstrate the concept and UX without production-grade backends.
+
+---
+
+## 🚀 How to Run Locally
+
+> **Note:** This is a **frontend-only Flutter prototype**. No Firebase or backend setup is required to run the app — all data is mocked locally.
+
+### Prerequisites
+
+Make sure the following are installed before you begin:
+
+| Tool | Version | Install |
+|---|---|---|
+| **Flutter SDK** | `^3.x` (Dart SDK `^3.9.0`) | [flutter.dev/docs/get-started/install](https://docs.flutter.dev/get-started/install) |
+| **Dart SDK** | Bundled with Flutter | — |
+| **Android Studio** or **Xcode** | Latest stable | For emulator / simulator support |
+| **VS Code** *(optional)* | Latest stable | With the [Flutter extension](https://marketplace.visualstudio.com/items?itemName=Dart-Code.flutter) |
+| **Git** | Any recent version | [git-scm.com](https://git-scm.com/) |
+
+Verify your Flutter environment is ready:
+
+```bash
+flutter doctor
+```
+
+All checks should pass (or show only non-critical warnings) before continuing.
+
+---
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/kimberlycmnintech/CodeNection.git
+cd CodeNection
+```
+
+---
+
+### 2. Install Dependencies
+
+```bash
+flutter pub get
+```
+
+---
+
+### 3. Set Up Environment Variables *(optional for prototype)*
+
+The `.env.example` file documents the only external key this app references:
+
+```bash
+# Copy the example file
+cp .env.example .env
+```
+
+Then open `.env` and fill in your key:
+
+```env
+GOOGLE_MAPS_API_KEY=YOUR_GOOGLE_MAPS_API_KEY_HERE
+```
+
+> **For the prototype**, the Google Maps key is only needed if you want live map tiles on the Itinerary Map screen. The rest of the app runs without it.
+
+---
+
+### 4. Run the App
+
+#### On a connected Android device or emulator
+
+```bash
+flutter run
+```
+
+#### On iOS Simulator (macOS only)
+
+```bash
+open -a Simulator   # launch the simulator first
+flutter run
+```
+
+#### On Chrome (web preview)
+
+```bash
+flutter run -d chrome
+```
+
+#### On Windows desktop
+
+```bash
+flutter run -d windows
+```
+
+---
+
+### Common Issues
+
+| Issue | Fix |
+|---|---|
+| `flutter doctor` shows missing Android SDK | Install via Android Studio → SDK Manager |
+| `Dart SDK ^3.9.0` not found | Run `flutter upgrade` to update your Flutter channel |
+| Google Fonts not loading | Ensure you have an active internet connection on first run (fonts are cached after that) |
+| Maps screen shows grey tiles | Add your `GOOGLE_MAPS_API_KEY` to `.env` (see Step 3) |
+| Build fails on iOS | Run `cd ios && pod install` then retry `flutter run` |
+
+---
