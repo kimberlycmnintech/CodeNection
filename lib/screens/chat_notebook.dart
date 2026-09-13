@@ -105,7 +105,7 @@ class NotebookTab extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Travel Notebook', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              const Text('AI Notebook', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
               const SizedBox(height: 4),
               const Text('Ideas, links, and messages saved from chat.', style: TextStyle(color: Colors.grey)),
               const SizedBox(height: 16),
@@ -115,7 +115,7 @@ class NotebookTab extends StatelessWidget {
                   onPressed: trip.notebookItems.isEmpty ? null : onGenerate,
                   icon: const Icon(Icons.auto_awesome),
                   label: const Text('Generate Itinerary from Notebook'),
-                  style: FilledButton.styleFrom(backgroundColor: coral),
+                  style: FilledButton.styleFrom(backgroundColor: const Color(0xFF0F172A)),
                 ),
               ),
             ],

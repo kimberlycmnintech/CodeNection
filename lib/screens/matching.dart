@@ -246,8 +246,8 @@ class MatchDetailModal extends StatelessWidget {
                       ),
                     );
                   },
-                  icon: const Icon(Icons.favorite_border_rounded),
-                  label: Text('Send Pair Request to ${match.name}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  icon: const Icon(Icons.handshake_rounded),
+                  label: Text('Request Pair with ${match.name}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                   style: FilledButton.styleFrom(
                     backgroundColor: coral,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
