@@ -1,12 +1,12 @@
 <div align="center">
 
 # 🪹 TripNest
-### by See u in MMU
+### by see u in MMU
 
-**Team:** Yeat Jing Rong · Toh Shee Thong · Kimberly Chan · Tan Qian Wen  
+**Team:** Yeat Jing Rong · Toh Shee Thong · Kimberly Chan Mun Nga · Tan Qian Wen  
 **Problem Statement:** Travel Planner
 
-[🎥 Video Presentation](Unlisted_Youtube_Link) · [📑 Presentation Slides](Public_Link)
+[🎥 Video Presentation](https://youtu.be/12eLDKLyK3w) · [📑 Presentation Slides](https://canva.link/0yn6uv77506vsqi)
 
 <br>
 
