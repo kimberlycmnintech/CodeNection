@@ -6,7 +6,7 @@
 **Team:** Yeat Jing Rong · Toh Shee Thong · Kimberly Chan Mun Nga · Tan Qian Wen  
 **Problem Statement:** Travel Planner
 
-[🎥 Video Presentation](https://youtu.be/12eLDKLyK3w) · [📑 Presentation Slides](https://canva.link/0yn6uv77506vsqi)
+[🎥 Video Presentation](https://youtu.be/12eLDKLyK3w) · [📑 Presentation Slides](https://canva.link/0yn6uv77506vsqi) · [🌐 Website ](https://tripnest-ac9fe.web.app/)
 
 <br>
 
