@@ -43,32 +43,10 @@ class _AuthGateState extends State<AuthGate> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header brand mark
-              Row(
-                children: [
-                  Container(
-                    width: 38,
-                    height: 38,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF0F172A),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.groups_rounded,
-                      color: Colors.white,
-                      size: 22,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    'TripNest',
-                    style: GoogleFonts.inter(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      color: const Color(0xFF0F172A),
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                ],
+              Image.asset(
+                'assets/logo.png',
+                height: 42,
+                fit: BoxFit.contain,
               ),
               const SizedBox(height: 36),
               Text(

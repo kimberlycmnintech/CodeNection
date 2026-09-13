@@ -99,6 +99,8 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void _openEditProfileModal() {
+    bool modalIsOpenToPair = widget.data.myProfile.isOpenToPair;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -259,6 +261,85 @@ class _ProfilePageState extends State<ProfilePage> {
                         }
                       },
                     ),
+                    const SizedBox(height: 18),
+
+                    // Travel Pairing Availability Switch Card
+                    Text(
+                      'Travel Pairing Status',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF0F172A),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              gradient: modalIsOpenToPair
+                                  ? const LinearGradient(
+                                      colors: [Color(0xFF3B82F6), Color(0xFF8B5CF6)],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    )
+                                  : null,
+                              color: modalIsOpenToPair ? null : const Color(0xFFE2E8F0),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              modalIsOpenToPair ? Icons.group_add_rounded : Icons.person_off_outlined,
+                              color: modalIsOpenToPair ? Colors.white : const Color(0xFF64748B),
+                              size: 18,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Open to Pair',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFF0F172A),
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  modalIsOpenToPair
+                                      ? 'Visible to potential travel buddies'
+                                      : 'Currently not looking for travel partners',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 11.5,
+                                    color: const Color(0xFF64748B),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Switch(
+                            value: modalIsOpenToPair,
+                            activeThumbColor: Colors.white,
+                            activeTrackColor: const Color(0xFF8B5CF6),
+                            onChanged: (val) {
+                              setModalState(() {
+                                modalIsOpenToPair = val;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
                     const SizedBox(height: 20),
                     SizedBox(
                       width: double.infinity,
@@ -275,6 +356,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             widget.data.myProfile.name = _nameController.text.trim();
                             widget.data.myProfile.age =
                                 int.tryParse(_ageController.text.trim()) ?? 29;
+                            widget.data.myProfile.isOpenToPair = modalIsOpenToPair;
                           });
                           widget.onChanged();
                           Navigator.pop(ctx);
@@ -493,50 +575,6 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
       child: Stack(
         children: [
-          // Background Decorative Stamp & Script Illustrations
-          Positioned(
-            right: 40,
-            top: 25,
-            child: Opacity(
-              opacity: 0.35,
-              child: CustomPaint(
-                size: const Size(130, 130),
-                painter: _StampWatermarkPainter(),
-              ),
-            ),
-          ),
-          Positioned(
-            right: 30,
-            bottom: 30,
-            child: Opacity(
-              opacity: 0.45,
-              child: Transform.rotate(
-                angle: -0.15,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      'Good Travellers',
-                      style: GoogleFonts.caveat(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF475569),
-                      ),
-                    ),
-                    Text(
-                      'Brighter Worlds',
-                      style: GoogleFonts.caveat(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF475569),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
           // Top-Right Floating Edit Button
           Positioned(
             top: 18,
@@ -600,14 +638,26 @@ class _ProfilePageState extends State<ProfilePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'TRIPNEST',
-          style: GoogleFonts.inter(
-            fontSize: 11,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 1.6,
-            color: const Color(0xFF64748B),
-          ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              'assets/logo_icon.png',
+              width: 15,
+              height: 15,
+              fit: BoxFit.contain,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              'TRIPNEST',
+              style: GoogleFonts.inter(
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.6,
+                color: const Color(0xFF64748B),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 2),
         Text(
@@ -773,54 +823,86 @@ class _ProfilePageState extends State<ProfilePage> {
         const SizedBox(height: 14),
 
         // Verified Profile & Open to Pair Badges Row
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color: const Color(0xFFDCFCE7),
-                borderRadius: BorderRadius.circular(100),
-                border: Border.all(color: const Color(0xFF86EFAC)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.check_circle_rounded, size: 16, color: Color(0xFF16A34A)),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Verified Profile',
-                    style: GoogleFonts.inter(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFF15803D),
+        Builder(
+          builder: (context) {
+            final isOpen = widget.data.myProfile.isOpenToPair;
+            return Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFDCFCE7),
+                    borderRadius: BorderRadius.circular(100),
+                    border: Border.all(color: const Color(0xFF86EFAC)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.check_circle_rounded, size: 16, color: Color(0xFF16A34A)),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Verified Profile',
+                        style: GoogleFonts.inter(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF15803D),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                GestureDetector(
+                  onTap: _openEditProfileModal,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      gradient: isOpen
+                          ? const LinearGradient(
+                              colors: [Color(0xFF3B82F6), Color(0xFF8B5CF6)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            )
+                          : null,
+                      color: isOpen ? null : const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(100),
+                      border: isOpen
+                          ? null
+                          : Border.all(color: const Color(0xFFCBD5E1)),
+                      boxShadow: isOpen
+                          ? [
+                              BoxShadow(
+                                color: const Color(0xFF6366F1).withValues(alpha: 0.38),
+                                blurRadius: 10,
+                                offset: const Offset(0, 3),
+                              ),
+                            ]
+                          : null,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          isOpen ? Icons.group_add_rounded : Icons.person_off_outlined,
+                          size: 16,
+                          color: isOpen ? Colors.white : const Color(0xFF64748B),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          isOpen ? 'Open to Pair' : 'Pairing Paused',
+                          style: GoogleFonts.inter(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.2,
+                            color: isOpen ? Colors.white : const Color(0xFF64748B),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 10),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(100),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.group_add_rounded, size: 16, color: Color(0xFF0F172A)),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Open to Pair',
-                    style: GoogleFonts.inter(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFF0F172A),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+                ),
+              ],
+            );
+          },
         ),
       ],
     );
@@ -1018,11 +1100,11 @@ class _ProfilePageState extends State<ProfilePage> {
                     });
                   },
                   child: Container(
-                    width: double.infinity,
-                    constraints: const BoxConstraints(maxWidth: 420),
+                    width: 390,
+                    height: 640,
                     padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0F172A).withValues(alpha: 0.95),
+                      color: const Color(0xFF0F172A).withValues(alpha: 0.96),
                       borderRadius: BorderRadius.circular(28),
                       border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
                       boxShadow: [
@@ -1034,7 +1116,8 @@ class _ProfilePageState extends State<ProfilePage> {
                       ],
                     ),
                     child: Column(
-                      mainAxisSize: MainAxisSize.min,
+                      mainAxisSize: MainAxisSize.max,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         // Top Header Bar
                         Row(
@@ -1075,22 +1158,26 @@ class _ProfilePageState extends State<ProfilePage> {
                           ],
                         ),
 
-                        const SizedBox(height: 20),
-
-                        // Interactive 3D Card with Scroll/Drag Driven Matrix
-                        Transform(
-                          alignment: Alignment.center,
-                          transform: Matrix4.identity()
-                            ..setEntry(3, 2, 0.0016)
-                            ..rotateX(rotX)
-                            ..rotateY(rotY),
-                          child: isFront
-                              ? _buildBadgeCardFace(displayName, displayAge, isFront: true)
-                              : Transform(
-                                  alignment: Alignment.center,
-                                  transform: Matrix4.identity()..rotateY(math.pi),
-                                  child: _buildBadgeCardFace(displayName, displayAge, isFront: false),
-                                ),
+                        // Interactive 3D Card with Fixed Frame (prevents outer bracket resizing)
+                        SizedBox(
+                          width: 280,
+                          height: 430,
+                          child: Center(
+                            child: Transform(
+                              alignment: Alignment.center,
+                              transform: Matrix4.identity()
+                                ..setEntry(3, 2, 0.0016)
+                                ..rotateX(rotX)
+                                ..rotateY(rotY),
+                              child: isFront
+                                  ? _buildBadgeCardFace(displayName, displayAge, isFront: true)
+                                  : Transform(
+                                      alignment: Alignment.center,
+                                      transform: Matrix4.identity()..rotateY(math.pi),
+                                      child: _buildBadgeCardFace(displayName, displayAge, isFront: false),
+                                    ),
+                            ),
+                          ),
                         ),
 
                         const SizedBox(height: 18),
@@ -1361,14 +1448,26 @@ class _ProfilePageState extends State<ProfilePage> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'TRIPNEST',
-                        style: GoogleFonts.spaceMono(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 1.2,
-                          color: const Color(0xFF475569),
-                        ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Image.asset(
+                            'assets/logo_icon.png',
+                            width: 13,
+                            height: 13,
+                            fit: BoxFit.contain,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            'TRIPNEST',
+                            style: GoogleFonts.spaceMono(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.2,
+                              color: const Color(0xFF475569),
+                            ),
+                          ),
+                        ],
                       ),
                       Text(
                         'THE EXPLORER',
@@ -1737,81 +1836,12 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   // =========================================================================
-  // RIGHT SIDE CARDS (OPEN TO PAIR TOGGLE + REWARDS CARD)
+  // RIGHT SIDE CARDS (REWARDS CARD)
   // =========================================================================
   Widget _buildRightSideCards(UserProfile profile) {
     return Column(
       children: [
-        // 1. OPEN TO PAIR CARD TOGGLE
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 10,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: const BoxDecoration(
-                  color: Color(0xFFDCFCE7),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.people_rounded,
-                  color: Color(0xFF16A34A),
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Open to Pair',
-                      style: GoogleFonts.inter(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w800,
-                        color: const Color(0xFF0F172A),
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Visible to potential travel buddies',
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        color: const Color(0xFF64748B),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Switch(
-                value: profile.isOpenToPair,
-                activeThumbColor: Colors.white,
-                activeTrackColor: const Color(0xFF10B981),
-                onChanged: (val) {
-                  setState(() {
-                    profile.isOpenToPair = val;
-                  });
-                  widget.onChanged();
-                },
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // 2. REWARDS CARD
+        // REWARDS CARD
         Container(
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
@@ -1953,45 +1983,4 @@ class _ProfilePageState extends State<ProfilePage> {
       ],
     );
   }
-}
-
-// Custom Painter for Stamp Watermark on Hero Background
-class _StampWatermarkPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFF64748B)
-      ..strokeWidth = 1.2
-      ..style = PaintingStyle.stroke;
-
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2;
-
-    // Outer circle
-    canvas.drawCircle(center, radius, paint);
-    // Inner circle
-    canvas.drawCircle(center, radius - 6, paint);
-
-    // Inner plane icon
-    const icon = Icons.flight_rounded;
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: String.fromCharCode(icon.codePoint),
-        style: TextStyle(
-          fontSize: 28,
-          fontFamily: icon.fontFamily,
-          color: const Color(0xFF64748B),
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    );
-    textPainter.layout();
-    textPainter.paint(
-      canvas,
-      Offset(center.dx - textPainter.width / 2, center.dy - textPainter.height / 2),
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

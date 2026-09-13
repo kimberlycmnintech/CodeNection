@@ -249,6 +249,7 @@ class TripFolderItem {
   final String? daysLeftBadge;
   final List<String>? tags;
   final String? coverImageUrl;
+  final int? daysCount;
 
   TripFolderItem({
     required this.id,
@@ -274,7 +275,33 @@ class TripFolderItem {
     this.daysLeftBadge,
     this.tags,
     this.coverImageUrl,
+    this.daysCount,
   });
+}
+
+// ----------------------------------------------------
+// DAY COLOR PALETTE FOR ITINERARY MAPS
+// ----------------------------------------------------
+class DayColorPalette {
+  static const List<Color> dayColors = [
+    Color(0xFF10B981), // Day 1: Emerald Green (#10B981)
+    Color(0xFFF59E0B), // Day 2: Amber / Orange (#F59E0B)
+    Color(0xFF3B82F6), // Day 3: Royal Blue (#3B82F6)
+    Color(0xFF8B5CF6), // Day 4: Purple (#8B5CF6)
+    Color(0xFFEF4444), // Day 5: Rose / Red (#EF4444)
+    Color(0xFF0D9488), // Day 6: Teal (#0D9488)
+    Color(0xFF6366F1), // Day 7: Indigo (#6366F1)
+  ];
+
+  static Color getColorForDay(int dayNumber) {
+    if (dayNumber <= 0) return dayColors.first;
+    return dayColors[(dayNumber - 1) % dayColors.length];
+  }
+
+  static String getHexForDay(int dayNumber) {
+    final color = getColorForDay(dayNumber);
+    return '0x${(color.toARGB32() & 0x00FFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}';
+  }
 }
 
 // ----------------------------------------------------
@@ -328,66 +355,66 @@ class TripRepository {
       ),
     ];
 
-    // Day 1 Stops (Seoul / Shibuya & Harajuku)
+    // Day 1 Stops (Shibuya & Harajuku)
     final day1Stops = [
       ItineraryPlaceStop(
         id: 'p_1_1',
         time: '11:00',
-        name: 'Anthracite Coffee Roasters',
+        name: 'Blue Bottle Coffee Shibuya',
         category: 'Café',
         categoryIcon: '☕',
         address: '1-7-3 Jinnan, Shibuya-ku, Tokyo',
-        description: 'Converted shoe factory serving dark roast single origins.',
+        description: 'Converted two-story cafe in Kitaya Park serving dark roast single origins and pour-overs.',
         duration: '1 hour',
-        estimatedCost: '₩6,500 (~RM22)',
+        estimatedCost: '¥800 (~RM25)',
         distanceToNext: '800m',
         travelMethod: 'Walk 800m (about 10 min)',
-        rating: 4.5,
-        reviewCount: 1840,
+        rating: 4.6,
+        reviewCount: 1665,
         whyRecommended: 'Perfect morning coffee gathering; matches Daniel and Maya’s café preferences.',
-        googleMapsUrl: 'https://maps.google.com/?q=Anthracite+Coffee+Roasters+Seoul',
-        lat: 37.5492,
-        lng: 126.9135,
+        googleMapsUrl: 'https://maps.google.com/?q=Blue+Bottle+Coffee+Shibuya+Tokyo',
+        lat: 35.6635,
+        lng: 139.7005,
         imageUrl: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=500',
       ),
       ItineraryPlaceStop(
         id: 'p_1_2',
         time: '13:00',
-        name: 'Yeonnam-dong Gyeongui Line Forest Park',
+        name: 'Meiji Jingu & Yoyogi Park',
         category: 'Nature & Stroll',
         categoryIcon: '🌳',
-        address: 'Yeonnam-dong, Seoul',
-        description: 'A charming greenway with cafes, trees and a laid-back atmosphere in the heart of Hongdae.',
+        address: '1-1 Yoyogikamizonocho, Shibuya-ku, Tokyo',
+        description: 'Serene forested shrine paths with giant torii gates and towering cedar trees.',
         duration: '1.5 hours',
         estimatedCost: 'Free',
         distanceToNext: '1.2 km',
         travelMethod: 'Walk 1.2 km (about 15 min)',
-        rating: 4.6,
-        reviewCount: 14200,
-        whyRecommended: 'Charming greenway stroll with coffee and trees.',
-        googleMapsUrl: 'https://maps.google.com/?q=Gyeongui+Line+Forest+Park+Seoul',
-        lat: 37.5615,
-        lng: 126.9242,
+        rating: 4.7,
+        reviewCount: 24000,
+        whyRecommended: 'Charming green stroll escaping bustling shopping avenues.',
+        googleMapsUrl: 'https://maps.google.com/?q=Meiji+Jingu+Tokyo',
+        lat: 35.6764,
+        lng: 139.6993,
         imageUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=500',
       ),
       ItineraryPlaceStop(
         id: 'p_1_3',
         time: '15:30',
-        name: 'Hongdae Street',
-        category: 'Shopping & Explore',
-        categoryIcon: '🛍️',
-        address: 'Hongdae, Seoul',
-        description: 'Trendy shops, street food and a youthful vibe. A must-visit in Seoul.',
+        name: 'Shibuya Sky Observation Deck',
+        category: 'Sightseeing',
+        categoryIcon: '🏙️',
+        address: '2-24-12 Shibuya, Shibuya-ku, Tokyo',
+        description: 'Breathtaking 360-degree open-air panoramic view high above Shibuya Scramble Crossing.',
         duration: '2 hours',
-        estimatedCost: 'Free',
+        estimatedCost: '¥2,200 (~RM68)',
         distanceToNext: 'End of Day 1',
         travelMethod: 'Short walk',
-        rating: 4.4,
-        reviewCount: 22000,
-        whyRecommended: 'Youthful vibe, indie boutiques, and street food.',
-        googleMapsUrl: 'https://maps.google.com/?q=Hongdae+Street+Seoul',
-        lat: 37.5545,
-        lng: 126.9220,
+        rating: 4.7,
+        reviewCount: 18000,
+        whyRecommended: 'Unforgettable golden hour photography and city skyline vistas.',
+        googleMapsUrl: 'https://maps.google.com/?q=Shibuya+Sky+Tokyo',
+        lat: 35.6610,
+        lng: 139.7001,
         imageUrl: 'https://images.unsplash.com/photo-1538485399081-7191377e8241?w=500',
       ),
     ];
@@ -803,39 +830,40 @@ class TripRepository {
       id: 'trip_tokyo_2026',
       name: 'Tokyo Adventure',
       destination: 'Tokyo, Japan',
-      startDate: '12 Nov',
-      endDate: '16 Nov 2026',
-      startDateTime: DateTime(2026, 11, 12),
-      endDateTime: DateTime(2026, 11, 16),
-      status: TripStatus.upcoming,
+      startDate: '12 Apr',
+      endDate: '22 Apr 2026',
+      startDateTime: DateTime(2026, 4, 12),
+      endDateTime: DateTime(2026, 4, 22),
+      status: TripStatus.ongoing,
       chatId: 'tokyo_squad',
       chatName: 'Tokyo Squad',
       travellers: tokyoTravellers,
       days: tokyoDays,
-      placesCount: 16,
+      placesCount: 14,
       lastUpdated: '10 min ago',
-      notebookDecisionsCount: 4,
+      notebookDecisionsCount: 6,
       mapPreviewUrl: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=800',
       coverImageUrl: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=800',
-      daysLeftBadge: '12 days left',
+      daysLeftBadge: 'Ongoing • Day 3',
       tags: const ['City', 'Food', 'Culture', '+2'],
       themeColor: const Color(0xFFFF5A5F),
       recommendations: tokyoRecommendations,
       aiSuggestions: tokyoAiSuggestions,
+      daysCount: 10,
     );
 
     // ------------------------------------------------
-    // 2. SANTORINI ESCAPE (ONGOING)
+    // 2. SANTORINI ESCAPE (UPCOMING)
     // ------------------------------------------------
     final santoriniTrip = TripFolderItem(
       id: 'trip_santorini_2026',
       name: 'Santorini Escape',
       destination: 'Santorini, Greece',
-      startDate: '3 Sep',
-      endDate: '9 Sep 2026',
-      startDateTime: DateTime(2026, 9, 3),
-      endDateTime: DateTime(2026, 9, 9),
-      status: TripStatus.ongoing,
+      startDate: '6 Oct',
+      endDate: '12 Oct 2026',
+      startDateTime: DateTime(2026, 10, 6),
+      endDateTime: DateTime(2026, 10, 12),
+      status: TripStatus.upcoming,
       chatId: 'daniel_direct',
       chatName: 'Daniel',
       travellers: tokyoTravellers,
@@ -845,11 +873,12 @@ class TripRepository {
       notebookDecisionsCount: 3,
       mapPreviewUrl: 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=800',
       coverImageUrl: 'https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?w=800',
-      daysLeftBadge: 'Ongoing',
+      daysLeftBadge: '24 days left',
       tags: const ['Beaches', 'Relaxation', 'Photography', '+1'],
       themeColor: const Color(0xFF3B82F6),
       recommendations: [],
       aiSuggestions: [],
+      daysCount: 5,
     );
 
     // ------------------------------------------------

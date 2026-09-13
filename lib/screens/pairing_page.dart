@@ -2571,12 +2571,12 @@ class _PairingPageState extends State<PairingPage> {
                     child: FilledButton.icon(
                       onPressed: isRequested ? null : () => _openPairMessageComposer(match),
                       icon: Icon(
-                        isRequested ? Icons.check_circle_rounded : Icons.favorite_border_rounded,
+                        isRequested ? Icons.check_circle_rounded : Icons.handshake_rounded,
                         size: 17,
                         color: Colors.white,
                       ),
                       label: Text(
-                        isRequested ? 'Request Sent' : 'Pair Up',
+                        isRequested ? 'Request Sent' : 'Request Pair',
                         style: const TextStyle(
                           fontWeight: FontWeight.w700,
                           fontSize: 13,

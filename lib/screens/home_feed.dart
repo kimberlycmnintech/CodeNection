@@ -28,24 +28,13 @@ class HomeFeed extends StatefulWidget {
 
 class _HomeFeedState extends State<HomeFeed> {
   late TripFolderItem _activeTrip;
-  final TextEditingController _searchController = TextEditingController();
   
   int _tripCoins = 150;
   bool _bonusClaimed = false;
-  String _selectedVibe = 'All';
   
   final Set<String> _sentPairRequests = {};
   final Set<String> _likedPosts = {};
   final Set<String> _savedPosts = {};
-
-  final List<Map<String, String>> _vibes = [
-    {'name': 'All', 'icon': '✨'},
-    {'name': 'Tokyo Nightlife', 'icon': '🏮'},
-    {'name': 'Kyoto Zen', 'icon': '🌸'},
-    {'name': 'Café Hopping', 'icon': '☕'},
-    {'name': 'Alpine Trek', 'icon': '🏔️'},
-    {'name': 'Street Food', 'icon': '🍜'},
-  ];
 
   @override
   void initState() {
@@ -56,7 +45,6 @@ class _HomeFeedState extends State<HomeFeed> {
 
   @override
   void dispose() {
-    _searchController.dispose();
     super.dispose();
   }
 
@@ -169,33 +157,29 @@ class _HomeFeedState extends State<HomeFeed> {
                 children: [
                   // 1. TOP DYNAMIC HEADER
                   _buildDynamicHeader(),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 20),
 
-                  // 2. DISCOVERY SEARCH & VIBE CAPSULES
-                  _buildSearchAndVibeBar(),
-                  const SizedBox(height: 22),
-
-                  // 3. UPCOMING ACTIVE TRIP SHOWCASE (HERO)
+                  // 2. UPCOMING ACTIVE TRIP SHOWCASE (HERO)
                   _buildActiveTripHero(isDesktop),
                   const SizedBox(height: 26),
 
-                  // 4. TRAVEL PAIRING COMPANION SPOTLIGHT CAROUSEL
+                  // 3. TRAVEL PAIRING COMPANION SPOTLIGHT CAROUSEL
                   _buildTravelPairingSection(),
                   const SizedBox(height: 26),
 
-                  // 5. TRIPNEST AI STUDIO & SMART PROMPT CHIPS
+                  // 4. TRIPNEST AI STUDIO & SMART PROMPT CHIPS
                   _buildAiStudioSection(),
                   const SizedBox(height: 26),
 
-                  // 6. DAILY LOG & GAMIFICATION (TripCoins + Mood Check-in)
+                  // 5. DAILY LOG & GAMIFICATION (TripCoins + Mood Check-in)
                   _buildDailyLogAndGamificationSection(isDesktop),
                   const SizedBox(height: 26),
 
-                  // 7. CURATED COMMUNITY JOURNAL STORIES
+                  // 6. CURATED COMMUNITY JOURNAL STORIES
                   _buildCommunityStoriesSection(),
                   const SizedBox(height: 26),
 
-                  // 8. QUICK PLANNING HUB LAUNCHPAD
+                  // 7. QUICK PLANNING HUB LAUNCHPAD
                   _buildQuickPlanningHub(),
                 ],
               ),
@@ -232,11 +216,19 @@ class _HomeFeedState extends State<HomeFeed> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Left Column: User Greeting and Status
+        // Left Column: Brand Logo, User Greeting and Status
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Official TripNest Brand Logo
+              Image.asset(
+                'assets/logo.png',
+                height: 26,
+                fit: BoxFit.contain,
+              ),
+              const SizedBox(height: 12),
+
               // Pill Status
               Row(
                 mainAxisSize: MainAxisSize.min,
@@ -253,7 +245,7 @@ class _HomeFeedState extends State<HomeFeed> {
                         const Icon(Icons.flight_takeoff_rounded, color: Colors.white, size: 12),
                         const SizedBox(width: 5),
                         Text(
-                          'TOKYO IN 12 DAYS',
+                          'SANTORINI IN 24 DAYS',
                           style: GoogleFonts.inter(
                             fontSize: 10,
                             fontWeight: FontWeight.w800,
@@ -304,7 +296,7 @@ class _HomeFeedState extends State<HomeFeed> {
               ),
               const SizedBox(height: 3),
 
-              // Weather & Live Context Subtitle
+              // Weather Subtitle
               Row(
                 children: [
                   const Icon(Icons.wb_sunny_rounded, size: 14, color: Color(0xFFF59E0B)),
@@ -315,16 +307,6 @@ class _HomeFeedState extends State<HomeFeed> {
                       fontSize: 12.5,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF475569),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Text('•', style: TextStyle(color: Color(0xFF94A3B8))),
-                  const SizedBox(width: 8),
-                  Text(
-                    '4 compatible companions near you',
-                    style: GoogleFonts.inter(
-                      fontSize: 12.5,
-                      color: const Color(0xFF64748B),
                     ),
                   ),
                 ],
@@ -371,129 +353,7 @@ class _HomeFeedState extends State<HomeFeed> {
   }
 
   // =========================================================================
-  // 2. SEARCH & VIBE CAPSULES
-  // =========================================================================
-  Widget _buildSearchAndVibeBar() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Editorial Search Bar
-        Container(
-          height: 48,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(100),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
-                blurRadius: 10,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              const Icon(Icons.search_rounded, color: Color(0xFF64748B), size: 20),
-              const SizedBox(width: 10),
-              Expanded(
-                child: TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Search destinations, companions, or vibes...',
-                    hintStyle: GoogleFonts.inter(
-                      fontSize: 13,
-                      color: const Color(0xFF94A3B8),
-                    ),
-                    border: InputBorder.none,
-                    isDense: true,
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                ),
-              ),
-              if (_searchController.text.isNotEmpty)
-                GestureDetector(
-                  onTap: () => setState(() => _searchController.clear()),
-                  child: const Icon(Icons.clear_rounded, size: 16, color: Color(0xFF94A3B8)),
-                )
-              else
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(100),
-                  ),
-                  child: const Icon(Icons.tune_rounded, size: 15, color: Color(0xFF475569)),
-                ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-
-        // Horizontal Vibe Filter Chips
-        SizedBox(
-          height: 36,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: _vibes.length,
-            separatorBuilder: (context, index) => const SizedBox(width: 8),
-            itemBuilder: (context, index) {
-              final vibe = _vibes[index];
-              final isSelected = _selectedVibe == vibe['name'];
-
-              return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _selectedVibe = vibe['name']!;
-                  });
-                },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: isSelected ? const Color(0xFF0F172A) : Colors.white,
-                    borderRadius: BorderRadius.circular(100),
-                    border: Border.all(
-                      color: isSelected ? const Color(0xFF0F172A) : const Color(0xFFE2E8F0),
-                      width: 1.0,
-                    ),
-                    boxShadow: isSelected
-                        ? [
-                            BoxShadow(
-                              color: const Color(0xFF0F172A).withValues(alpha: 0.18),
-                              blurRadius: 6,
-                              offset: const Offset(0, 2),
-                            ),
-                          ]
-                        : null,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(vibe['icon']!, style: const TextStyle(fontSize: 13)),
-                      const SizedBox(width: 6),
-                      Text(
-                        vibe['name']!,
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                          color: isSelected ? Colors.white : const Color(0xFF475569),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  // =========================================================================
-  // 3. UPCOMING ACTIVE TRIP HERO
+  // 2. UPCOMING ACTIVE TRIP HERO
   // =========================================================================
   Widget _buildActiveTripHero(bool isDesktop) {
     return Container(

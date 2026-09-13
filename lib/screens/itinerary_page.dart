@@ -168,7 +168,7 @@ class _ItineraryPageState extends State<ItineraryPage> {
               _openTripWorkspace(newTrip);
             },
             style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF819EE5),
+              backgroundColor: const Color(0xFF0F172A),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             ),
             child: Text('Create Trip', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
@@ -265,7 +265,7 @@ class _ItineraryPageState extends State<ItineraryPage> {
                       ),
                     ),
                     style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFF819EE5),
+                      backgroundColor: const Color(0xFF0F172A),
                       elevation: 0,
                       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                       shape: RoundedRectangleBorder(
@@ -301,7 +301,7 @@ class _ItineraryPageState extends State<ItineraryPage> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(20),
-                    borderSide: const BorderSide(color: Color(0xFF819EE5), width: 1.5),
+                    borderSide: const BorderSide(color: Color(0xFF0F172A), width: 1.5),
                   ),
                 ),
                 onChanged: (val) => setState(() => _searchQuery = val),
@@ -705,7 +705,7 @@ class _ItineraryPageState extends State<ItineraryPage> {
                                 ),
                                 const SizedBox(width: 6),
                                 Text(
-                                  '${trip.days.length} Days • ${trip.placesCount} Places',
+                                  '${trip.daysCount ?? trip.days.length} Days • ${trip.placesCount} Places',
                                   style: GoogleFonts.inter(
                                     fontSize: 11.5,
                                     fontWeight: FontWeight.w600,
@@ -889,7 +889,7 @@ class _ItineraryPageState extends State<ItineraryPage> {
             ),
             const SizedBox(width: 5),
             Text(
-              'Ongoing',
+              trip.daysLeftBadge ?? 'Ongoing • Day 3',
               style: GoogleFonts.inter(
                 fontSize: 11,
                 fontWeight: FontWeight.w800,
@@ -919,7 +919,7 @@ class _ItineraryPageState extends State<ItineraryPage> {
             const Icon(Icons.calendar_today_outlined, size: 12, color: Colors.white),
             const SizedBox(width: 5),
             Text(
-              trip.daysLeftBadge ?? '12 days left',
+              trip.daysLeftBadge ?? '24 days left',
               style: GoogleFonts.inter(
                 fontSize: 11,
                 fontWeight: FontWeight.w700,

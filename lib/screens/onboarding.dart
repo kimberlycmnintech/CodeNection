@@ -348,32 +348,10 @@ class _SwipeOnboardingScreenState extends State<SwipeOnboardingScreen>
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       // Brand logo
-                      Row(
-                        children: [
-                          Container(
-                            width: 32,
-                            height: 32,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF0F172A),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.groups_rounded,
-                              color: Colors.white,
-                              size: 18,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'TripNest',
-                            style: GoogleFonts.inter(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                              color: const Color(0xFF0F172A),
-                              letterSpacing: -0.4,
-                            ),
-                          ),
-                        ],
+                      Image.asset(
+                        'assets/logo.png',
+                        height: 32,
+                        fit: BoxFit.contain,
                       ),
 
                       // Center Question Pill + Progress Bar
@@ -1499,16 +1477,6 @@ class _PersonalPassScreenState extends State<PersonalPassScreen> {
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF0F172A)),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
-          'OFFICIAL TRAVEL PASS',
-          style: GoogleFonts.inter(
-            color: const Color(0xFF64748B),
-            fontWeight: FontWeight.w700,
-            fontSize: 12,
-            letterSpacing: 2.0,
-          ),
-        ),
-        centerTitle: true,
       ),
       body: SafeArea(
         child: SingleChildScrollView(

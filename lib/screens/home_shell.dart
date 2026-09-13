@@ -111,7 +111,11 @@ class _HomeShellState extends State<HomeShell> with TickerProviderStateMixin {
         trip: trip,
         onNavigateToChat: () => _onTabSelected(3),
       ),
-      ChatPage(data: widget.data, trip: trip),
+      ChatPage(
+        data: widget.data,
+        trip: trip,
+        onNavigateToTab: (idx) => _onTabSelected(idx),
+      ),
       ProfilePage(data: widget.data, trip: trip, onChanged: () => setState(() {})),
     ];
 
@@ -119,7 +123,7 @@ class _HomeShellState extends State<HomeShell> with TickerProviderStateMixin {
 
     return Scaffold(
       backgroundColor: const Color(0xFFE8F4FD),
-      extendBody: true,
+      extendBody: selected != 3,
       body: IndexedStack(index: selected, children: pages),
       // =====================================================================
       // FLOATING PILL NAVIGATION BAR WITH ELEVATED PAIR BUTTON

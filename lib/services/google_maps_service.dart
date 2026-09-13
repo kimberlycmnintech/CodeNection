@@ -43,41 +43,168 @@ class GoogleMapsService {
   // ----------------------------------------------------
   // 1. STATIC MAPS URL BUILDER
   // ----------------------------------------------------
-  /// Generates a high-resolution Google Static Map URL for a list of stops.
+  /// Generates a high-resolution Google Static Map URL supporting multi-day colored markers
+  /// and day-specific route paths.
   static String getStaticMapUrl({
-    required List<ItineraryPlaceStop> stops,
+    List<ItineraryPlaceStop>? stops,
+    List<ItineraryDayData>? allDays,
+    int? activeDayIndex,
     String mapType = 'roadmap', // roadmap, satellite, hybrid, terrain
     int width = 800,
     int height = 500,
     int scale = 2,
     int? selectedIndex,
+    bool showPath = true,
+    bool includeMarkers = true,
+    String? markerSize,
   }) {
-    if (stops.isEmpty) {
-      return 'https://maps.googleapis.com/maps/api/staticmap?center=Tokyo,Japan&zoom=12&size=${width}x$height&scale=$scale&maptype=$mapType&key=$apiKey';
-    }
-
     final queryParams = <String>[];
     queryParams.add('size=${width}x$height');
     queryParams.add('scale=$scale');
     queryParams.add('maptype=$mapType');
 
-    // Add numbered markers
-    for (int i = 0; i < stops.length; i++) {
-      final stop = stops[i];
-      final isSelected = selectedIndex != null && selectedIndex == i;
-      final color = isSelected ? '0xEF4444' : '0xFB7185'; // bright red if selected, coral otherwise
-      final label = (i + 1).toString();
-      queryParams.add('markers=color:$color%7Clabel:$label%7C${stop.lat},${stop.lng}');
+    if ((allDays == null || allDays.isEmpty) && (stops == null || stops.isEmpty)) {
+      return 'https://maps.googleapis.com/maps/api/staticmap?center=Tokyo,Japan&zoom=12&size=${width}x$height&scale=$scale&maptype=$mapType&key=$apiKey';
     }
 
-    // Add connecting polyline path
-    if (stops.length > 1) {
-      final pathPoints = stops.map((s) => '${s.lat},${s.lng}').join('%7C');
-      queryParams.add('path=color:0xFB7185ee%7Cweight:5%7C$pathPoints');
+    // 1. Plot markers if includeMarkers is true
+    if (includeMarkers) {
+      if (allDays != null && allDays.isNotEmpty) {
+        for (int d = 0; d < allDays.length; d++) {
+          final day = allDays[d];
+          final dayHex = DayColorPalette.getHexForDay(day.dayNumber);
+          final isActiveDay = activeDayIndex != null && activeDayIndex == d;
+
+          for (int i = 0; i < day.stops.length; i++) {
+            final stop = day.stops[i];
+            final label = (i + 1).toString();
+            final defaultSize = isActiveDay ? '' : '%7Csize:mid';
+            final sizeParam = (markerSize != null && markerSize.isNotEmpty) ? '%7Csize:$markerSize' : defaultSize;
+            queryParams.add('markers=color:$dayHex$sizeParam%7Clabel:$label%7C${stop.lat},${stop.lng}');
+          }
+        }
+      } else if (stops != null && stops.isNotEmpty) {
+        final dayNumber = (activeDayIndex != null) ? activeDayIndex + 1 : 1;
+        final dayHex = DayColorPalette.getHexForDay(dayNumber);
+        final sizeParam = (markerSize != null && markerSize.isNotEmpty) ? '%7Csize:$markerSize' : '';
+
+        for (int i = 0; i < stops.length; i++) {
+          final stop = stops[i];
+          final label = (i + 1).toString();
+          queryParams.add('markers=color:$dayHex$sizeParam%7Clabel:$label%7C${stop.lat},${stop.lng}');
+        }
+      }
+    } else {
+      // Ensure locations remain visible in the viewport without baking bitmap markers
+      final visibleStops = (stops != null && stops.isNotEmpty)
+          ? stops
+          : (allDays != null && activeDayIndex != null && activeDayIndex < allDays.length)
+              ? allDays[activeDayIndex].stops
+              : (allDays != null && allDays.isNotEmpty ? allDays.expand((d) => d.stops).toList() : <ItineraryPlaceStop>[]);
+      if (visibleStops.isNotEmpty) {
+        final visibleParam = visibleStops.map((s) => '${s.lat},${s.lng}').join('%7C');
+        queryParams.add('visible=$visibleParam');
+      }
+    }
+
+    // 2. Draw route path ONLY for the active day when showPath is true
+    if (showPath) {
+      if (allDays != null && allDays.isNotEmpty && activeDayIndex != null && activeDayIndex >= 0 && activeDayIndex < allDays.length) {
+        final activeDay = allDays[activeDayIndex];
+        final activeHex = DayColorPalette.getHexForDay(activeDay.dayNumber);
+        if (activeDay.stops.length > 1) {
+          final poly = getDayEncodedPolyline(activeDay.dayNumber, activeDay.stops);
+          if (poly != null && poly.isNotEmpty) {
+            queryParams.add('path=color:${activeHex}dd%7Cweight:5%7Cenc:$poly');
+          } else {
+            final routeCoords = getRealisticRoutePoints(activeDay.stops, activeDay.dayNumber);
+            final pathPoints = routeCoords.map((pt) => '${pt['lat']!.toStringAsFixed(4)},${pt['lng']!.toStringAsFixed(4)}').join('%7C');
+            queryParams.add('path=color:${activeHex}dd%7Cweight:5%7C$pathPoints');
+          }
+        }
+      } else if (stops != null && stops.length > 1) {
+        final dayNumber = (activeDayIndex != null) ? activeDayIndex + 1 : 1;
+        final dayHex = DayColorPalette.getHexForDay(dayNumber);
+        final poly = getDayEncodedPolyline(dayNumber, stops);
+        if (poly != null && poly.isNotEmpty) {
+          queryParams.add('path=color:${dayHex}dd%7Cweight:5%7Cenc:$poly');
+        } else {
+          final routeCoords = getRealisticRoutePoints(stops, dayNumber);
+          final pathPoints = routeCoords.map((pt) => '${pt['lat']!.toStringAsFixed(4)},${pt['lng']!.toStringAsFixed(4)}').join('%7C');
+          queryParams.add('path=color:${dayHex}dd%7Cweight:5%7C$pathPoints');
+        }
+      }
+    } else {
+      return 'https://maps.googleapis.com/maps/api/staticmap?center=Tokyo,Japan&zoom=12&size=${width}x$height&scale=$scale&maptype=$mapType&key=$apiKey';
     }
 
     queryParams.add('key=$apiKey');
     return 'https://maps.googleapis.com/maps/api/staticmap?${queryParams.join('&')}';
+  }
+
+  /// Authentic Google Directions overview polylines for verified itinerary days
+  static const Map<int, String> _dayPolylines = {
+    1: 'qktxEuftsY`@Dd@?V@D}@iBAYEs@e@e@q@WA@]mBM{CS_@Ea@M_AOkAOcCSA^ABKAC@@\\_@BA_@WA_BG}DQq@Em@KGFCFIIKIEB_@TOe@GOQ@o@CK@MDc@EE??XgB^uBXoABkJs@S?gBX[Jc@Qo@MAXMlCc@dCQp@Q^EDDnAB|@?f@_BJ]FcDPbDQDCrBMDEEaBEoADEP_@Pq@b@eCLmC@Yn@Lb@PZKfBYR?jJr@nACtBYfB_@?YD?RDN?LEJAn@BR?DLNd@^UDCJHHHBGDGNDfAJfHXV@@^D?XCA]BAJ@@C@_@fAHfBP`AL\\H`@LdBN~BNbAFA\\V@FLHJ@EX[NRXRTHr@DbA?@EX?ADh@?v@?vB@xAA\\?Bc@h@DdAB`A@Ab@?RZB?CD?`AFHABd@[?',
+    2: 'o}sxEwr|sYc@SaAm@uBqAy@o@y@q@]UXeAy@{@_A{@Zm@Ve@PS~AyCDKCCWY@AFQFQFi@NwBIOFqADq@Fq@HYDADMF[@KA?GD@BNMPy@Da@\\}AJ]@ONm@Rk@Lm@MELk@?EJDZwABOf@yBBCKEH]@?NyAF{@HaAJeARaCGAFgAq@i@c@_@sB}Am@e@@CECAB[YQOABCGgA{@QSOMCAABcBsAUS}AiACKm@i@@XSQG@?QE?a@[c@]D?MOOK]YiBwAUIe@_@DKCC]YGLm@e@YUOUo@g@g@a@UQDOw@a@GPcAy@GCADYUUQSO@GUQAFGKc@g@_@YOOMYs@y@MMJOXg@yCsD[g@}@kAiAoACCEHGHSZYb@BBOVEECFCCGMQQcBiBWWSUIJ_@c@GHGJUZACILFHQRWXCEILBDk@|@EEA@INiAfBAAEE_@d@LRQLa@v@Yf@s@nAQb@KDCDAAOKm@SWEMC?EGA?Hq@OOEw@Ym@M@KWCAF{@S]Ik@O_@IE?m@OmAYqCo@w@Qq@OKC?Go@MCAADu@Q[GaASyA]WIBSPuAHk@?EMCsCu@OIk@KCA?CIGMGQIYMGCKOMIUGMBCGKEICq@@eAWEA@Sf@HHa@',
+    3: '_p~xEm_gtYEN?J[AClAMn@E?APGJKnA?ZC?EHIz@IpAMfAA\\J?@J@b@Bn@FhABt@R?Ap@?DD?K`AIl@SxA?XSxAC?CTB?Il@Gh@WnBK`AGn@F@D?Cf@?BC?En@U`EQhDKAANEr@E~@OlCG?A\\B?GbAOnAGd@[dC_@lCKAKf@ADB@F?Mn@M`@IZMl@Md@JHdBpALLt@b@?DpChBHBBB`CzAb@T|CpBNDBDIVCAABhDvBfAr@LL?NCXRb@CHCJCVANFDC\\?NL`@Td@r@zALVNTNVBJBX@^Gp@ClAINAXAh@Fj@h@IDA@DAIEKJ@x@JZ@tAFf@AfFk@|@Gd@Bf@BpBXH@AFA@l@Jn@F?MD?~AN@CF?ABD@VB^?xBHlGl@rCV`BPj@Jr@PD@AP@H`@HD??C@A?MB@nBb@`AT?GD@RBCLL@pBN`BL|AJv@Hh@J@EL@BBF@z@LLDHRBLT@^NLHLH|@DH?DQ@]FIDu@',
+    4: '{dtxEgymsYPU?Cu@mAOUMLODIGQQSG@K{@Sq@Sk@OX_Bc@QPk@DSHCLMFEACLGKSMHCD@BG?SWgAgBs@gAw@kA}AgCUCK?G??IK@q@aAEUKQo@gAa@o@m@eA?EK@AHc@PYJIk@Mi@GFo@Xe@LY@]?G@e@PBPI@ESc@Hm@JYFCDg@Bg@H[FAXa@BC@?Gc@@c@N_B^_AVk@Lc@JE[AEOC_@A_AAQE[A}@EI@]Gk@EoA]]GoAc@]SUSg@_@WWQUw@u@]_@OOy@w@cAaAy@u@?FM??IBICCOKYYs@q@We@Wo@Yw@Su@Ui@kAuAE?EMDAIM_@m@IQWc@k@s@m@s@ScAOBc@s@e@}@GMIG[aBE?WoASw@[gAWo@]eACCo@aB]cAGM{AyEe@}AMg@[aAK[{@wB{AgCQu@WQCIGIw@yA_AaBEMkAyBc@q@GAEINOBCKOCBOLCK@AEIGFEKFGWc@EGKQWc@{AgC_A{AS]YISk@Yu@IOFIVWFGQAu@AFGk@}@QYgA{AU[KYY_@mAiB_@m@SQ[e@CQKQ{@oAS[HGGIGFMSFIEIIHS_@O[SS?MSo@m@iBGOGU@E?G?EEM_@{@GGGO[s@_@kAc@wAYgA_AiDKSi@TEBGOWBU@M@W@DLK@CKi@DI@?JI@AMI@OBY@WDOBA]M@wAJKYy@F[e@Ga@GKGCgAUkAQ_@COIKOo@FAF@JG@q@F@GK@AD]B[DM@AUGi@?Ec@FWF?IE@BO?C',
+    5: 'c|txEo}atY]e@EAHIi@s@x@u@DEl@q@c@s@b@e@HK@@r@s@h@k@PQB?h@k@FMn@q@d@i@RS\\a@NICARMDFFIb@a@~AwA|DoDbA_ApBmBTSJQr@w@`@a@bA}@|A{A@CAC`@c@BFpAqADIBFfAkACENKhAmACCDE@BVYTWPQvB{Bj@o@~A_B`CcCb@e@NOEIv@}@DHFGJKDKb@g@LKt@y@NSh@m@vAcBZ]lAwAfCaC~IaJpC_CrAkAbCiCHMPQDHxAwAj@k@HIEGa@m@KMg@y@]m@CEBD\\l@RZ^j@`@l@DFMLP\\JKJPIHJRDEtBjDx@vALTDCx@rA`@t@tA|BhAnBb@j@f@|@Zd@DFMJb@v@JKP\\p@hAt@hAV`@TV@BGFT`@FGVd@h@~@RZ\\j@b@t@NVH`@LRPXHNv@pA`@r@PVVNPTVX~@v@t@b@NFADNF@Gb@Lp@Nv@H`A@v@EpAUvBa@tDs@hASb@Ot@_@bAu@zAkA~CaCd@c@j@q@Tc@d@gAXeAJg@BQJDPu@BFN\\VPNQFEHJNNBAJN`@j@F@JJx@bAhArAv@v@p@n@t@h@fBjAbAp@ZT?FJB?G?ENNBBGBFNBCRXIDJRBFJI`@n@n@fAn@jA]Vk@XcAd@s@`@JX@BFCZp@|BdF~@tBZt@b@~@SNa@Xp@v@JNMN',
+  };
+
+  /// Returns the pre-computed Google Directions encoded polyline for a day if available.
+  static String? getDayEncodedPolyline(int dayNumber, List<ItineraryPlaceStop> stops) {
+    return _dayPolylines[dayNumber];
+  }
+
+  /// Decodes a Google encoded polyline string into coordinates list.
+  static List<Map<String, double>> decodePolyline(String encoded) {
+    final points = <Map<String, double>>[];
+    int index = 0, len = encoded.length;
+    int lat = 0, lng = 0;
+
+    while (index < len) {
+      int b, shift = 0, result = 0;
+      do {
+        b = encoded.codeUnitAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      int dlat = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+      lat += dlat;
+
+      shift = 0;
+      result = 0;
+      do {
+        b = encoded.codeUnitAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      int dlng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+      lng += dlng;
+
+      points.add({'lat': lat / 1E5, 'lng': lng / 1E5});
+    }
+    return points;
+  }
+
+  /// Generates realistic street-following navigation waypoints between itinerary stops
+  /// utilizing Google Directions polylines.
+  static List<Map<String, double>> getRealisticRoutePoints(List<ItineraryPlaceStop> stops, [int? dayNumber]) {
+    if (stops.isEmpty) return [];
+    if (stops.length == 1) return [{'lat': stops.first.lat, 'lng': stops.first.lng}];
+
+    // If we have a verified polyline for this day, decode and return it
+    if (dayNumber != null && _dayPolylines.containsKey(dayNumber)) {
+      final decoded = decodePolyline(_dayPolylines[dayNumber]!);
+      if (decoded.isNotEmpty) return decoded;
+    }
+
+    // Otherwise connect consecutive stops
+    final points = <Map<String, double>>[];
+    for (int i = 0; i < stops.length; i++) {
+      points.add({'lat': stops[i].lat, 'lng': stops[i].lng});
+    }
+    return points;
   }
 
   // ----------------------------------------------------

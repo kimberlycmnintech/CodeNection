@@ -90,14 +90,13 @@ class SplashScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                padding: const EdgeInsets.all(18.0),
+                padding: const EdgeInsets.all(16.0),
                 child: Image.asset(
-                  'assets/logo.png',
+                  'assets/logo_icon.png',
                   fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) => const Icon(
-                    Icons.groups_rounded,
-                    size: 44,
-                    color: Color(0xFF0F172A),
+                  errorBuilder: (context, error, stackTrace) => Image.asset(
+                    'assets/logo.png',
+                    fit: BoxFit.contain,
                   ),
                 ),
               ),

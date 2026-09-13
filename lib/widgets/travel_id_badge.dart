@@ -437,14 +437,26 @@ class TravelIdBadgeState extends State<TravelIdBadge>
                   ),
                 ),
               ),
-              Text(
-                'tripnest',
-                style: GoogleFonts.syne(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w900,
-                  color: const Color(0xFF141414),
-                  letterSpacing: -0.2,
-                ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Image.asset(
+                    'assets/logo_icon.png',
+                    width: 14,
+                    height: 14,
+                    fit: BoxFit.contain,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'tripnest',
+                    style: GoogleFonts.syne(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      color: const Color(0xFF141414),
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -641,10 +653,11 @@ class TravelIdBadgeState extends State<TravelIdBadge>
               shape: BoxShape.circle,
               border: Border.all(color: const Color(0xFF0B2240), width: 2),
             ),
-            child: const Icon(
-              Icons.explore_rounded,
-              size: 40,
-              color: Color(0xFF0B2240),
+            child: Image.asset(
+              'assets/logo_icon.png',
+              width: 40,
+              height: 40,
+              fit: BoxFit.contain,
             ),
           ),
           const SizedBox(height: 16),
