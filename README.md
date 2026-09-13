@@ -239,7 +239,7 @@ This became the core direction of **TripNest**:
 
 ## 3. Design & Prototype
 
-**UI Prototype:** `[ TODO — Insert your Figma / Canva / Netlify link here. Verify it opens in incognito. ]`
+**UI Prototype:** [Check UI Prototype Here](https://canva.link/2ds21of5bskxzb8)
 
 The app follows a cohesive design language: **Midnight Navy** (`#0F172A`) as the primary tone, **Azure Blue** (`#2563EB`) as the action accent, **Ice Blue** (`#EBF4FB`) as the background tint, and **Plus Jakarta Sans** as the type system throughout. 
 
